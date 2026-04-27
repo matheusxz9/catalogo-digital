@@ -16,9 +16,12 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Studio Bella Mizi - API")
 
+_origins_raw = os.getenv("ALLOWED_ORIGINS", "http://localhost:5173")
+origins = [o.strip() for o in _origins_raw.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173"],
+    allow_origins=origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
