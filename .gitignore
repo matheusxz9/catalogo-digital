@@ -33,3 +33,4 @@ __screenshots__/
 # Nunca commitar o .env real — só o .env.example
 backend/.env
 .env
+backend/venv/
