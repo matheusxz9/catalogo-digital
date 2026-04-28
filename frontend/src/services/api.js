@@ -1,6 +1,5 @@
 const BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
-// Requisições GET
 async function get(caminho) {
   const resposta = await fetch(`${BASE_URL}${caminho}`);
   if (!resposta.ok) {
@@ -10,7 +9,6 @@ async function get(caminho) {
   return resposta.json();
 }
 
-// Requisições POST e PUT com JSON
 async function enviar(metodo, caminho, corpo) {
   const resposta = await fetch(`${BASE_URL}${caminho}`, {
     method: metodo,
@@ -38,7 +36,6 @@ async function enviarForm(metodo, caminho, formData) {
   return resposta.json();
 }
 
-// Requisições autenticadas com JSON
 async function enviarAutenticado(metodo, caminho, corpo) {
   const token = localStorage.getItem("token");
   const resposta = await fetch(`${BASE_URL}${caminho}`, {
@@ -56,31 +53,36 @@ async function enviarAutenticado(metodo, caminho, corpo) {
   return resposta.json();
 }
 
+async function deletarAutenticado(caminho) {
+  const token = localStorage.getItem("token");
+  const resposta = await fetch(`${BASE_URL}${caminho}`, {
+    method: "DELETE",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!resposta.ok && resposta.status !== 204) {
+    const erro = await resposta.json().catch(() => ({}));
+    throw new Error(erro.detail || `Erro ${resposta.status}`);
+  }
+}
+
 export const api = {
-  // Público
   listarProdutos: () => get("/produtos"),
   buscarProduto: (id) => get(`/produtos/${id}`),
+  login: (email, senha) => enviar("POST", "/admin/login", { email, senha }),
 
-  // Admin — autenticado
-  login: (email, senha) =>
-    enviar("POST", "/admin/login", { email, senha }),
+  // Criar produto com até 4 imagens (FormData com campo "imagens" múltiplo)
+  criarProduto: (formData) => enviarForm("POST", "/produtos", formData),
 
-  criarProduto: (formData) =>
-    enviarForm("POST", "/produtos", formData),
+  // Atualizar dados textuais do produto
+  atualizarProduto: (id, dados) => enviarAutenticado("PUT", `/produtos/${id}`, dados),
 
-  atualizarProduto: (id, dados) =>
-    enviarAutenticado("PUT", `/produtos/${id}`, dados),
+  // Adicionar imagens a um produto existente
+  adicionarImagens: (id, formData) => enviarForm("POST", `/produtos/${id}/imagens`, formData),
 
-  atualizarImagemProduto: (id, formData) =>
-    enviarForm("POST", `/produtos/${id}/imagem`, formData),
+  // Deletar uma imagem específica
+  deletarImagem: (produtoId, imagemId) =>
+    deletarAutenticado(`/produtos/${produtoId}/imagens/${imagemId}`),
 
-  deletarProduto: (id) => {
-    const token = localStorage.getItem("token");
-    return fetch(`${BASE_URL}/produtos/${id}`, {
-      method: "DELETE",
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-    }).then((r) => {
-      if (!r.ok && r.status !== 204) throw new Error(`Erro ${r.status}`);
-    });
-  },
+  // Deletar produto
+  deletarProduto: (id) => deletarAutenticado(`/produtos/${id}`),
 };
