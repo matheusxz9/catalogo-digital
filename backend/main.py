@@ -30,7 +30,7 @@ app.add_middleware(
 app.include_router(produtos.router)
 app.include_router(admin.router)
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {"status": "ok", "mensagem": "API Studio Bella Mizi funcionando!"}
 
