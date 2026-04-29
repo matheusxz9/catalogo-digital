@@ -8,13 +8,13 @@ import uuid
  
 router = APIRouter(prefix="/produtos", tags=["Produtos"])
  
-TIPOS_PERMITIDOS = {"image/jpeg", "image/png", "image/webp"}
+TIPOS_PERMITIDOS = {"image/jpeg", "image/png", "image/webp", "image/heic", "image/heif", "image/avif", "image/gif", "image/bmp", "image/tiff"}
 TAMANHO_MAXIMO_BYTES = 5 * 1024 * 1024
 MAX_IMAGENS = 4
  
 def _validar_imagem(imagem: UploadFile, conteudo: bytes) -> None:
     if imagem.content_type not in TIPOS_PERMITIDOS:
-        raise HTTPException(status_code=400, detail="Tipo não permitido. Use: jpeg, png ou webp")
+        raise HTTPException(status_code=400, detail="Tipo não permitido")
     if len(conteudo) > TAMANHO_MAXIMO_BYTES:
         raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo: 5MB")
  

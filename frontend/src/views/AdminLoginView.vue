@@ -26,6 +26,9 @@ async function entrar() {
 
 <template>
   <div class="login-wrapper">
+    <button class="btn-voltar" @click="router.push({name: 'Catalogo'})">
+      <- Voltar ao catálogo
+    </button>
     <div class="login-card">
       <h1 class="login-titulo">Área Administrativa</h1>
       <p class="login-sub">Studio Bella Mizi</p>
@@ -53,10 +56,22 @@ async function entrar() {
 .login-wrapper {
   min-height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
   background: var(--cor-fundo);
+  gap: 1rem;
 }
+
+.btn-voltar {
+  background: none;
+  color: var(--cor-texto-suave);
+  border: none;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: var(--transicao);
+}
+.btn-voltar:hover { color: var(--cor-primaria); }
 
 .login-card {
   background: white;

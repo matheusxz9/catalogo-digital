@@ -271,7 +271,7 @@ async function deletar(produto) {
             </div>
             <label v-if="imagensSelecionadas.length < 4" class="upload-btn">
               📷 Selecionar fotos
-              <input type="file" accept="image/jpeg,image/png,image/webp" multiple @change="onImagensSelecionadas" style="display:none" />
+              <input type="file" accept="image/*" multiple @change="onImagensSelecionadas" style="display:none" />
             </label>
             <p class="texto-suave" style="font-size:0.8rem; margin-top:0.25rem;">Selecione até 4 fotos de uma vez</p>
           </div>
