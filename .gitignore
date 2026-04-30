@@ -30,7 +30,26 @@ coverage
 __screenshots__/
 *.timestamp-*-*.mjs
 
-# Nunca commitar o .env real — só o .env.example
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtual env
+venv/
+.env
+
+# IDE
+.vscode/
 backend/.env
 .env
 backend/venv/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.sqlite3
