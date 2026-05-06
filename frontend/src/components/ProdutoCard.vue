@@ -13,127 +13,73 @@ function abrirDetalhe() {
 </script>
 
 <template>
-  <article class="card" @click="abrirDetalhe">
-    <div class="card-imagem-wrapper">
-      <img :src="produto.imagem_url" :alt="produto.nome" class="card-imagem" />
-      <div v-if="produto.estoque === 0" class="card-esgotado-overlay">
-        <span>Esgotado</span>
+  <article
+    class="bg-white rounded-2xl border border-rose-50 card-hover cursor-pointer overflow-hidden group"
+    style="box-shadow: 0 2px 12px rgba(233,30,140,0.06), 0 1px 3px rgba(0,0,0,0.05)"
+    @click="abrirDetalhe"
+  >
+    <!-- Image wrapper -->
+    <div class="relative overflow-hidden bg-blush-50" style="height: 200px">
+      <img
+        v-if="produto.imagem_url"
+        :src="produto.imagem_url"
+        :alt="produto.nome"
+        class="w-full h-full object-contain img-zoom"
+        style="background: white"
+      />
+      <div
+        v-else
+        class="w-full h-full flex items-center justify-center bg-blush-100"
+      >
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 text-rose-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+        </svg>
+      </div>
+
+      <!-- Esgotado overlay -->
+      <div
+        v-if="produto.estoque === 0"
+        class="absolute inset-0 bg-black/40 flex items-center justify-center"
+      >
+        <span class="bg-white text-charcoal font-body font-semibold text-xs px-4 py-1.5 rounded-full tracking-wider uppercase">
+          Esgotado
+        </span>
+      </div>
+
+      <!-- Category badge -->
+      <div class="absolute top-3 left-3">
+        <span class="bg-white/90 backdrop-blur-sm text-rose-500 text-xs font-body font-semibold px-2.5 py-1 rounded-full uppercase tracking-wider shadow-sm">
+          {{ produto.categoria }}
+        </span>
       </div>
     </div>
-    <div class="card-corpo">
-      <p class="card-categoria">{{ produto.categoria }}</p>
-      <h3 class="card-nome">{{ produto.nome }}</h3>
-      <p class="card-descricao">{{ produto.descricao }}</p>
 
-      <div class="card-rodape">
-        <span class="card-preco">R$ {{ produto.preco.toFixed(2) }}</span>
+    <!-- Body -->
+    <div class="p-4">
+      <h3 class="font-display font-semibold text-charcoal text-base leading-snug line-clamp-2 mb-1">
+        {{ produto.nome }}
+      </h3>
+      <p
+        v-if="produto.descricao"
+        class="text-xs text-gray-400 font-body line-clamp-2 mb-3 leading-relaxed"
+      >
+        {{ produto.descricao }}
+      </p>
+
+      <!-- Footer -->
+      <div class="flex items-center justify-between mt-auto pt-2 border-t border-rose-50">
+        <span class="font-display text-rose-500 font-semibold text-lg">
+          R$&nbsp;{{ produto.preco.toFixed(2) }}
+        </span>
         <span
-          :class="produto.estoque > 0 ? 'badge-disponivel' : 'badge-esgotado'"
-          class="badge"
+          :class="produto.estoque > 0
+            ? 'bg-emerald-50 text-emerald-600'
+            : 'bg-red-50 text-red-500'"
+          class="text-xs font-body font-semibold px-2.5 py-1 rounded-full"
         >
-          
-          {{ produto.estoque > 0 ? `${produto.estoque} un.` : "Esgotado" }}
+          {{ produto.estoque > 0 ? `${produto.estoque} un.` : 'Esgotado' }}
         </span>
       </div>
     </div>
   </article>
 </template>
-
-<style scoped>
-.card {
-  background: white;
-  border-radius: var(--raio-borda);
-  border: 1px solid var(--cor-borda);
-  box-shadow: var(--sombra);
-  cursor: pointer;
-  transition: var(--transicao);
-  overflow: hidden;
-}
-
-.card:hover {
-  box-shadow: var(--sombra-hover);
-  transform: translateY(-4px);
-}
-
-.card-imagem-wrapper {
-  position: relative;
-  height: 180px;
-  overflow: hidden;
-}
-
-.card-imagem {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transition: transform 0.3s ease;
-  background: white;
-}
-
-.card:hover .card-imagem {
-  transform: scale(1.05);
-}
-
-.card-esgotado-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.45);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-esgotado-overlay span {
-  background: white;
-  color: var(--cor-texto);
-  font-weight: 600;
-  padding: 0.4rem 1rem;
-  border-radius: 999px;
-  font-size: 0.85rem;
-}
-
-.card-corpo {
-  padding: 1rem;
-}
-
-.card-categoria {
-  font-size: 0.7rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--cor-primaria);
-  margin-bottom: 0.3rem;
-}
-
-.card-nome {
-  font-size: 1rem;
-  font-weight: 600;
-  color: var(--cor-texto);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-descricao {
-  font-size: 0.85rem;
-  color: var(--cor-texto-suave);
-  margin-top: 0.3rem;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-
-.card-rodape {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 0.75rem;
-}
-
-.card-preco {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: var(--cor-primaria);
-}
-</style>

@@ -25,111 +25,74 @@ async function entrar() {
 </script>
 
 <template>
-  <div class="login-wrapper">
-    <button class="btn-voltar" @click="router.push({name: 'Catalogo'})">
-      <- Voltar ao catálogo
+  <div class="min-h-screen bg-gradient-to-br from-blush-100 via-rose-50 to-blush-50 flex flex-col items-center justify-center px-4">
+
+    <!-- Back link -->
+    <button
+      @click="router.push({ name: 'Catalogo' })"
+      class="flex items-center gap-1.5 text-sm font-body text-gray-400 hover:text-rose-500 transition-colors mb-8 group"
+    >
+      <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+      </svg>
+      Voltar ao catálogo
     </button>
-    <div class="login-card">
-      <h1 class="login-titulo">Área Administrativa</h1>
-      <p class="login-sub">Studio Bella Mizi</p>
 
-      <div v-if="erro" class="login-erro">{{ erro }}</div>
+    <!-- Card -->
+    <div class="bg-white rounded-2xl border border-rose-100 shadow-sm w-full max-w-sm p-8">
 
-      <div class="login-campo">
-        <label>Email</label>
-        <input v-model="email" type="email" placeholder="admin@email.com" />
+      <!-- Logo / Title -->
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-14 h-14 bg-rose-50 rounded-2xl mb-4">
+          <svg class="w-7 h-7 text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+          </svg>
+        </div>
+        <h1 class="font-display text-2xl font-semibold text-charcoal">Área Admin</h1>
+        <p class="font-body text-xs text-gray-400 mt-1 tracking-wide">Studio Bella Mizi</p>
       </div>
 
-      <div class="login-campo">
-        <label>Senha</label>
-        <input v-model="senha" type="password" placeholder="••••••••" @keyup.enter="entrar" />
+      <!-- Erro -->
+      <div
+        v-if="erro"
+        class="bg-red-50 border border-red-100 text-red-600 text-sm font-body px-4 py-3 rounded-xl mb-5"
+      >
+        {{ erro }}
       </div>
 
-      <button class="btn-primario" :disabled="carregando" @click="entrar">
-        {{ carregando ? "Entrando..." : "Entrar" }}
+      <!-- Campos -->
+      <div class="space-y-4">
+        <div>
+          <label class="block text-xs font-body font-semibold text-gray-600 mb-1.5 tracking-wide">Email</label>
+          <input
+            v-model="email"
+            type="email"
+            placeholder="admin@email.com"
+            class="w-full border border-rose-100 rounded-xl px-4 py-3 text-sm font-body text-charcoal placeholder-gray-300 focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
+          />
+        </div>
+
+        <div>
+          <label class="block text-xs font-body font-semibold text-gray-600 mb-1.5 tracking-wide">Senha</label>
+          <input
+            v-model="senha"
+            type="password"
+            placeholder="••••••••"
+            @keyup.enter="entrar"
+            class="w-full border border-rose-100 rounded-xl px-4 py-3 text-sm font-body text-charcoal placeholder-gray-300 focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
+          />
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <button
+        :disabled="carregando"
+        @click="entrar"
+        class="w-full mt-6 bg-rose-500 hover:bg-rose-600 disabled:bg-rose-200 text-white font-body font-semibold py-3.5 rounded-xl transition-all duration-200 hover:-translate-y-0.5 disabled:translate-y-0 disabled:cursor-not-allowed text-sm tracking-wide"
+      >
+        {{ carregando ? 'Entrando...' : 'Entrar' }}
       </button>
     </div>
+
   </div>
 </template>
-
-<style scoped>
-.login-wrapper {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: var(--cor-fundo);
-  gap: 1rem;
-}
-
-.btn-voltar {
-  background: none;
-  color: var(--cor-texto-suave);
-  border: none;
-  font-size: 0.9rem;
-  cursor: pointer;
-  transition: var(--transicao);
-}
-.btn-voltar:hover { color: var(--cor-primaria); }
-
-.login-card {
-  background: white;
-  border: 1px solid var(--cor-borda);
-  border-radius: var(--raio-borda);
-  box-shadow: var(--sombra);
-  padding: 2rem;
-  width: 100%;
-  max-width: 380px;
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.login-titulo {
-  font-size: 1.4rem;
-  font-weight: 700;
-  color: var(--cor-texto);
-}
-
-.login-sub {
-  font-size: 0.85rem;
-  color: var(--cor-texto-suave);
-  margin-top: -0.5rem;
-}
-
-.login-erro {
-  background: var(--cor-erro-fundo);
-  color: var(--cor-erro);
-  padding: 0.75rem 1rem;
-  border-radius: 8px;
-  font-size: 0.9rem;
-}
-
-.login-campo {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
-}
-
-.login-campo label {
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--cor-texto);
-}
-
-.login-campo input {
-  border: 1px solid var(--cor-borda);
-  border-radius: 8px;
-  padding: 0.65rem 0.9rem;
-  font-size: 0.95rem;
-  font-family: inherit;
-  transition: var(--transicao);
-  outline: none;
-}
-
-.login-campo input:focus {
-  border-color: var(--cor-primaria);
-  box-shadow: 0 0 0 3px var(--cor-primaria-clara);
-}
-</style>

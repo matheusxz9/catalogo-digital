@@ -15,7 +15,7 @@ const imagemAtiva = ref(0);
 const imagens = computed(() => {
   if (!produto.value) return [];
   if (produto.value.imagens && produto.value.imagens.length > 0) {
-    return produto.value.imagens.map(img => img.imagem_url);
+    return produto.value.imagens.map((img) => img.imagem_url);
   }
   if (produto.value.imagem_url) return [produto.value.imagem_url];
   return [];
@@ -54,246 +54,175 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div>
+  <div class="min-h-screen bg-blush-50">
     <AppHeader />
-    <main class="container" style="padding-top: 2rem; padding-bottom: 3rem">
-      <div v-if="carregando" class="estado-central"><div class="spinner"></div></div>
 
-      <div v-else-if="erro" class="estado-central">
-        <p>{{ erro }}</p>
-        <button class="btn-primario" style="width:auto" @click="router.push('/')">Voltar ao catálogo</button>
+    <main class="max-w-3xl mx-auto px-4 sm:px-6 py-8 pb-16">
+
+      <!-- Loading -->
+      <div v-if="carregando" class="flex flex-col items-center justify-center py-32">
+        <div class="w-10 h-10 border-2 border-rose-100 border-t-rose-400 rounded-full animate-spin"></div>
       </div>
 
-      <div v-else-if="produto" class="detalhe">
-        <button class="btn-voltar" @click="router.back()">← Voltar ao catálogo</button>
+      <!-- Erro -->
+      <div v-else-if="erro" class="flex flex-col items-center justify-center py-32 text-center">
+        <div class="w-16 h-16 bg-rose-50 rounded-2xl flex items-center justify-center mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-rose-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 11-18 0 9 9 0 0118 0zm-9 3.75h.008v.008H12v-.008z" />
+          </svg>
+        </div>
+        <p class="font-display text-xl text-gray-400 font-light mb-6">{{ erro }}</p>
+        <button
+          @click="router.push('/')"
+          class="bg-rose-500 text-white font-body font-medium px-6 py-2.5 rounded-full hover:bg-rose-600 transition-colors"
+        >
+          Voltar ao catálogo
+        </button>
+      </div>
 
-        <div class="detalhe-card">
-          <!-- Carrossel de imagens -->
-          <div class="carrossel">
-            <div class="carrossel-principal">
-              <img
-                v-if="imagens.length > 0"
-                :src="imagens[imagemAtiva]"
-                :alt="produto.nome"
-                class="carrossel-img"
-              />
-              <div v-else class="carrossel-sem-img">📷</div>
+      <!-- Produto -->
+      <div v-else-if="produto">
+        <!-- Voltar -->
+        <button
+          @click="router.back()"
+          class="flex items-center gap-1.5 text-sm font-body text-gray-400 hover:text-rose-500 transition-colors mb-6 group"
+        >
+          <svg class="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
+          </svg>
+          Voltar ao catálogo
+        </button>
 
-              <div v-if="esgotado" class="detalhe-esgotado-overlay">
-                <span>Produto esgotado</span>
-              </div>
+        <!-- Card principal -->
+        <div class="bg-white rounded-2xl border border-rose-50 overflow-hidden" style="box-shadow: 0 4px 24px rgba(233,30,140,0.08)">
 
-              <!-- Setas -->
-              <button v-if="imagens.length > 1" class="seta seta-esq" @click="anterior">‹</button>
-              <button v-if="imagens.length > 1" class="seta seta-dir" @click="proximo">›</button>
+          <!-- Carrossel -->
+          <div class="relative bg-blush-50" style="height: 340px">
+            <img
+              v-if="imagens.length > 0"
+              :src="imagens[imagemAtiva]"
+              :alt="produto.nome"
+              class="w-full h-full object-contain transition-opacity duration-300"
+              style="background: white"
+            />
+            <div v-else class="w-full h-full flex items-center justify-center bg-blush-100">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-16 h-16 text-rose-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5zm10.5-11.25h.008v.008h-.008V8.25zm.375 0a.375.375 0 11-.75 0 .375.375 0 01.75 0z" />
+              </svg>
             </div>
 
-            <!-- Miniaturas -->
-            <div v-if="imagens.length > 1" class="miniaturas">
-              <img
-                v-for="(img, i) in imagens"
-                :key="i"
-                :src="img"
-                :alt="`Foto ${i+1}`"
-                class="miniatura"
-                :class="{ 'miniatura-ativa': i === imagemAtiva }"
-                @click="imagemAtiva = i"
-              />
-            </div>
-
-            <!-- Indicadores de pontos -->
-            <div v-if="imagens.length > 1" class="pontos">
-              <button
-                v-for="(_, i) in imagens"
-                :key="i"
-                class="ponto"
-                :class="{ 'ponto-ativo': i === imagemAtiva }"
-                @click="imagemAtiva = i"
-              />
-            </div>
-          </div>
-
-          <!-- Informações -->
-          <div class="detalhe-info">
-            <p class="detalhe-categoria">{{ produto.categoria }}</p>
-            <h1 class="detalhe-nome">{{ produto.nome }}</h1>
-            <p class="detalhe-descricao">{{ produto.descricao }}</p>
-
-            <div class="detalhe-preco-linha">
-              <span class="detalhe-preco">R$ {{ produto.preco.toFixed(2) }}</span>
-              <span :class="esgotado ? 'badge-esgotado' : 'badge-disponivel'" class="badge">
-                {{ esgotado ? "Esgotado" : `${produto.estoque} disponíveis` }}
+            <!-- Overlay esgotado -->
+            <div v-if="esgotado" class="absolute inset-0 bg-black/40 flex items-center justify-center">
+              <span class="bg-white font-body font-semibold text-sm px-6 py-2 rounded-full uppercase tracking-wider">
+                Produto esgotado
               </span>
             </div>
 
-            <a
-              :href="esgotado ? undefined : WHATSAPP_LINK"
-              target="_blank"
-              rel="noopener noreferrer"
-              :class="['btn-whatsapp', esgotado ? 'desabilitado' : '']"
-              style="margin-top: 1.5rem"
+            <!-- Setas -->
+            <button
+              v-if="imagens.length > 1"
+              @click="anterior"
+              class="absolute left-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all hover:scale-105"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+              <svg class="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/>
               </svg>
-              {{ esgotado ? "Produto indisponível" : "Comprar pelo WhatsApp" }}
-            </a>
+            </button>
+            <button
+              v-if="imagens.length > 1"
+              @click="proximo"
+              class="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center shadow-md hover:bg-white transition-all hover:scale-105"
+            >
+              <svg class="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
+              </svg>
+            </button>
+          </div>
+
+          <!-- Miniaturas -->
+          <div v-if="imagens.length > 1" class="flex gap-2 px-4 py-3 bg-blush-50 overflow-x-auto">
+            <button
+              v-for="(img, i) in imagens"
+              :key="i"
+              @click="imagemAtiva = i"
+              :class="[
+                'flex-shrink-0 w-14 h-14 rounded-xl overflow-hidden border-2 transition-all duration-200',
+                i === imagemAtiva ? 'border-rose-400 shadow-sm' : 'border-transparent opacity-60 hover:opacity-100'
+              ]"
+            >
+              <img :src="img" :alt="`Foto ${i + 1}`" class="w-full h-full object-cover" />
+            </button>
+          </div>
+
+          <!-- Indicadores -->
+          <div v-if="imagens.length > 1" class="flex justify-center gap-1.5 py-2 bg-blush-50">
+            <button
+              v-for="(_, i) in imagens"
+              :key="i"
+              @click="imagemAtiva = i"
+              :class="[
+                'rounded-full transition-all duration-200',
+                i === imagemAtiva ? 'w-4 h-1.5 bg-rose-400' : 'w-1.5 h-1.5 bg-rose-200'
+              ]"
+            />
+          </div>
+
+          <!-- Info -->
+          <div class="p-6 sm:p-8">
+            <div class="flex items-start justify-between gap-4 mb-2">
+              <span class="text-xs font-body font-semibold text-rose-400 uppercase tracking-widest">
+                {{ produto.categoria }}
+              </span>
+              <span
+                :class="esgotado
+                  ? 'bg-red-50 text-red-500'
+                  : 'bg-emerald-50 text-emerald-600'"
+                class="text-xs font-body font-semibold px-3 py-1 rounded-full flex-shrink-0"
+              >
+                {{ esgotado ? 'Esgotado' : `${produto.estoque} disponíveis` }}
+              </span>
+            </div>
+
+            <h1 class="font-display text-2xl sm:text-3xl font-semibold text-charcoal leading-snug mb-3">
+              {{ produto.nome }}
+            </h1>
+
+            <p v-if="produto.descricao" class="font-body text-gray-500 text-sm leading-relaxed mb-6">
+              {{ produto.descricao }}
+            </p>
+
+            <div class="border-t border-rose-50 pt-6">
+              <div class="flex items-center justify-between mb-6">
+                <div>
+                  <p class="text-xs text-gray-400 font-body mb-0.5">Preço</p>
+                  <span class="font-display text-3xl font-semibold text-rose-500">
+                    R$&nbsp;{{ produto.preco.toFixed(2) }}
+                  </span>
+                </div>
+              </div>
+
+              <!-- Botão WhatsApp -->
+              <a
+                :href="esgotado ? undefined : WHATSAPP_LINK"
+                target="_blank"
+                rel="noopener noreferrer"
+                :class="[
+                  'flex items-center justify-center gap-3 w-full py-4 rounded-xl font-body font-semibold text-base transition-all duration-200',
+                  esgotado
+                    ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                    : 'bg-[#25d366] text-white hover:bg-[#1da851] hover:-translate-y-0.5 shadow-sm hover:shadow-md'
+                ]"
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/>
+                </svg>
+                {{ esgotado ? 'Produto indisponível' : 'Comprar pelo WhatsApp' }}
+              </a>
+            </div>
           </div>
         </div>
       </div>
+
     </main>
   </div>
 </template>
-
-<style scoped>
-.btn-voltar {
-  background: none;
-  color: var(--cor-texto-suave);
-  font-size: 0.9rem;
-  margin-bottom: 1.5rem;
-  transition: var(--transicao);
-  padding: 0;
-}
-.btn-voltar:hover { color: var(--cor-primaria); }
-
-.detalhe-card {
-  background: white;
-  border-radius: var(--raio-borda);
-  border: 1px solid var(--cor-borda);
-  box-shadow: var(--sombra);
-  overflow: hidden;
-  max-width: 700px;
-  margin: 0 auto;
-}
-
-/* Carrossel */
-.carrossel { position: relative; }
-
-.carrossel-principal {
-  position: relative;
-  height: 320px;
-  overflow: hidden;
-  background: var(--cor-fundo);
-}
-
-.carrossel-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  transition: opacity 0.3s ease;
-  background: white;
-
-}
-
-.carrossel-sem-img {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  color: var(--cor-borda);
-}
-
-.seta {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255,255,255,0.85);
-  border: none;
-  width: 2.2rem;
-  height: 2.2rem;
-  border-radius: 50%;
-  font-size: 1.4rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transicao);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-  line-height: 1;
-}
-.seta:hover { background: white; box-shadow: 0 4px 12px rgba(0,0,0,0.2); }
-.seta-esq { left: 0.75rem; }
-.seta-dir { right: 0.75rem; }
-
-.miniaturas {
-  display: flex;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  overflow-x: auto;
-  background: var(--cor-fundo);
-}
-
-.miniatura {
-  width: 64px;
-  height: 64px;
-  object-fit: cover;
-  border-radius: 6px;
-  border: 2px solid transparent;
-  cursor: pointer;
-  transition: var(--transicao);
-  flex-shrink: 0;
-}
-
-.miniatura-ativa {
-  border-color: var(--cor-primaria);
-}
-
-.pontos {
-  display: flex;
-  justify-content: center;
-  gap: 0.4rem;
-  padding: 0.5rem 0;
-  background: var(--cor-fundo);
-}
-
-.ponto {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--cor-borda);
-  border: none;
-  cursor: pointer;
-  transition: var(--transicao);
-  padding: 0;
-}
-
-.ponto-ativo { background: var(--cor-primaria); }
-
-.detalhe-esgotado-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0,0,0,0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.detalhe-esgotado-overlay span {
-  background: white;
-  font-weight: 700;
-  padding: 0.5rem 1.5rem;
-  border-radius: 999px;
-}
-
-.detalhe-info { padding: 1.5rem; }
-.detalhe-categoria {
-  font-size: 0.75rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--cor-primaria);
-  margin-bottom: 0.4rem;
-}
-.detalhe-nome { font-size: 1.6rem; font-weight: 700; color: var(--cor-texto); }
-.detalhe-descricao { color: var(--cor-texto-suave); margin-top: 0.75rem; line-height: 1.7; }
-.detalhe-preco-linha {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-top: 1.25rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid var(--cor-borda);
-}
-.detalhe-preco { font-size: 2rem; font-weight: 700; color: var(--cor-primaria); }
-</style>
