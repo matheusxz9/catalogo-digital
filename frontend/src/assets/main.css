@@ -10,3 +10,38 @@
 img { max-width: 100%; display: block; }
 button { cursor: pointer; border: none; font-family: inherit; font-size: inherit; }
 a { text-decoration: none; color: inherit; }
+
+/* Theme variables */
+:root {
+  --bg: #ffffff;
+  --text: #111827;
+  --muted: #6b7280;
+  --card-bg: #ffffff;
+  --border: rgba(233,30,140,0.06);
+  --accent: #e91e8f;
+}
+
+/* Dark theme */
+[data-theme="dark"] {
+  --bg: #071025;
+  --text: #e6eef8;
+  --muted: #9aa4b2;
+  --card-bg: #0b1724;
+  --border: rgba(255,255,255,0.04);
+  --accent: #f472b6;
+}
+
+/* Apply base colors */
+html, body, #app {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Override some common utility classes under dark theme to keep visual consistency */
+[data-theme="dark"] .bg-white { background-color: var(--card-bg) !important; }
+[data-theme="dark"] .text-gray-500 { color: var(--muted) !important; }
+[data-theme="dark"] .text-gray-400 { color: var(--muted) !important; }
+[data-theme="dark"] .border-rose-50 { border-color: var(--border) !important; }
+[data-theme="dark"] .bg-blush-50 { background-color: rgba(255,240,245,0.02) !important; }
+[data-theme="dark"] .bg-blush-100 { background-color: rgba(255,240,245,0.03) !important; }
+[data-theme="dark"] .ring-rose-200 { box-shadow: 0 0 0 2px rgba(244,114,182,0.06) !important; }

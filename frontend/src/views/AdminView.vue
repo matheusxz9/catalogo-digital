@@ -1,10 +1,12 @@
 <script setup>
-import { ref, onMounted } from "vue";
+import { ref, onMounted, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 import { api } from "@/services/api";
+import { useProdutosStore } from "@/stores/produtos";
 import AppHeader from "@/components/AppHeader.vue";
 
 const router = useRouter();
+const store = useProdutosStore();
 const produtos = ref([]);
 const carregando = ref(false);
 const erro = ref(null);
@@ -14,7 +16,15 @@ const salvando = ref(false);
 const editandoId = ref(null);
 const produtoEditando = ref(null);
 
-const formInicial = { nome: "", categoria: "", descricao: "", preco: "", estoque: 0 };
+const formInicial = {
+  nome: "",
+  categoria: "",
+  descricao: "",
+  preco: "",
+  estoque: 0,
+  purchasePrice: "",
+  profitMargin: "",
+};
 const form = ref({ ...formInicial });
 const imagensSelecionadas = ref([]);
 
@@ -39,7 +49,27 @@ async function carregarProdutos() {
   }
 }
 
-onMounted(() => carregarProdutos());
+onMounted(async () => {
+  try {
+    await api.obterAdmin();
+    await carregarProdutos();
+  } catch (e) {
+    sair();
+  }
+});
+
+const precoSugerido = computed(() => {
+  const custo = parseFloat(form.value.purchasePrice);
+  if (isNaN(custo) || custo <= 0) return null;
+  const margem = parseFloat(form.value.profitMargin) || 0;
+  return custo * (1 + margem / 100);
+});
+
+function usarPrecoSugerido() {
+  if (precoSugerido.value !== null) {
+    form.value.preco = parseFloat(precoSugerido.value.toFixed(2));
+  }
+}
 
 function abrirNovo() {
   editandoId.value = null;
@@ -58,6 +88,8 @@ function abrirEdicao(produto) {
     descricao: produto.descricao || "",
     preco: produto.preco,
     estoque: produto.estoque,
+    purchasePrice: produto.purchasePrice !== null && produto.purchasePrice !== undefined ? produto.purchasePrice : "",
+    profitMargin: produto.profitMargin !== null && produto.profitMargin !== undefined ? produto.profitMargin : "",
   };
   imagensSelecionadas.value = [];
   mostrarFormulario.value = true;
@@ -93,6 +125,19 @@ function mostrarSucesso(msg) {
 async function salvar() {
   salvando.value = true;
   erro.value = null;
+
+  // Validações
+  if (form.value.purchasePrice !== "" && parseFloat(form.value.purchasePrice) < 0) {
+    erro.value = "O valor de compra não pode ser negativo.";
+    salvando.value = false;
+    return;
+  }
+  if (form.value.profitMargin !== "" && parseFloat(form.value.profitMargin) < 0) {
+    erro.value = "A margem de lucro não pode ser negativa.";
+    salvando.value = false;
+    return;
+  }
+
   try {
     if (editandoId.value) {
       await api.atualizarProduto(editandoId.value, {
@@ -101,6 +146,8 @@ async function salvar() {
         descricao: form.value.descricao,
         preco: parseFloat(form.value.preco),
         estoque: parseInt(form.value.estoque),
+        purchasePrice: form.value.purchasePrice !== "" ? parseFloat(form.value.purchasePrice) : null,
+        profitMargin: form.value.profitMargin !== "" ? parseFloat(form.value.profitMargin) : null,
       });
       if (imagensSelecionadas.value.length > 0) {
         const fd = new FormData();
@@ -115,10 +162,18 @@ async function salvar() {
       fd.append("descricao", form.value.descricao || "");
       fd.append("preco", parseFloat(form.value.preco));
       fd.append("estoque", parseInt(form.value.estoque));
+      if (form.value.purchasePrice !== "") {
+        fd.append("purchasePrice", parseFloat(form.value.purchasePrice));
+      }
+      if (form.value.profitMargin !== "") {
+        fd.append("profitMargin", parseFloat(form.value.profitMargin));
+      }
       imagensSelecionadas.value.forEach((img) => fd.append("imagens", img.file));
       await api.criarProduto(fd);
       mostrarSucesso("Produto criado com sucesso!");
     }
+    // Invalida cache do Pinia para atualizar visualização pública
+    store.recarregar();
     fecharFormulario();
     await carregarProdutos();
   } catch (e) {
@@ -128,30 +183,88 @@ async function salvar() {
   }
 }
 
-async function deletarImagemExistente(produto, imagemId) {
-  if (!confirm("Deletar esta imagem?")) return;
-  try {
-    await api.deletarImagem(produto.id, imagemId);
-    mostrarSucesso("Imagem removida!");
-    await carregarProdutos();
-    if (produtoEditando.value) {
-      produtoEditando.value = produtos.value.find((p) => p.id === produto.id) || null;
-    }
-  } catch (e) {
-    erro.value = e.message || "Erro ao deletar imagem.";
+const confirmacaoModal = ref({
+  aberto: false,
+  titulo: "",
+  mensagem: "",
+  confirmarTexto: "Confirmar",
+  cancelarTexto: "Cancelar",
+  acao: null,
+  isPerigoso: false,
+});
+
+function abrirConfirmacao({ titulo, mensagem, confirmarTexto, acao, isPerigoso }) {
+  confirmacaoModal.value = {
+    aberto: true,
+    titulo: titulo || "Tem certeza?",
+    mensagem: mensagem || "",
+    confirmarTexto: confirmarTexto || "Confirmar",
+    cancelarTexto: "Cancelar",
+    acao,
+    isPerigoso: isPerigoso || false,
+  };
+}
+
+function fecharConfirmacao() {
+  confirmacaoModal.value.aberto = false;
+  confirmacaoModal.value.acao = null;
+}
+
+function executarConfirmacao() {
+  if (confirmacaoModal.value.acao) {
+    confirmacaoModal.value.acao();
   }
+  fecharConfirmacao();
+}
+
+async function deletarImagemExistente(produto, imagemId) {
+  abrirConfirmacao({
+    titulo: "Deletar imagem",
+    mensagem: "Tem certeza que deseja remover esta imagem permanentemente?",
+    confirmarTexto: "Remover",
+    isPerigoso: true,
+    acao: async () => {
+      try {
+        await api.deletarImagem(produto.id, imagemId);
+        mostrarSucesso("Imagem removida!");
+        store.recarregar();
+        await carregarProdutos();
+        if (produtoEditando.value) {
+          produtoEditando.value = produtos.value.find((p) => p.id === produto.id) || null;
+        }
+      } catch (e) {
+        erro.value = e.message || "Erro ao deletar imagem.";
+      }
+    }
+  });
 }
 
 async function deletar(produto) {
-  if (!confirm(`Deletar "${produto.nome}"?`)) return;
-  try {
-    await api.deletarProduto(produto.id);
-    mostrarSucesso("Produto removido!");
-    await carregarProdutos();
-  } catch (e) {
-    erro.value = e.message || "Erro ao deletar produto.";
-  }
+  abrirConfirmacao({
+    titulo: "Deletar produto",
+    mensagem: `Tem certeza que deseja excluir "${produto.nome}" permanentemente?`,
+    confirmarTexto: "Excluir",
+    isPerigoso: true,
+    acao: async () => {
+      try {
+        await api.deletarProduto(produto.id);
+        mostrarSucesso("Produto removido!");
+        store.recarregar();
+        await carregarProdutos();
+      } catch (e) {
+        erro.value = e.message || "Erro ao deletar produto.";
+      }
+    }
+  });
 }
+
+watch(erro, (novoValor) => {
+  if (novoValor) {
+    setTimeout(() => {
+      if (erro.value === novoValor) erro.value = null;
+    }, 5000);
+  }
+});
 </script>
 
 <template>
@@ -194,21 +307,49 @@ async function deletar(produto) {
         </div>
       </div>
 
-      <!-- Alertas -->
-      <transition name="fade">
-        <div
-          v-if="sucesso"
-          class="flex items-center gap-2 bg-emerald-50 border border-emerald-100 text-emerald-700 text-sm font-body font-medium px-4 py-3 rounded-xl mb-6"
-        >
-          <svg class="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
-            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
-          </svg>
-          {{ sucesso }}
-        </div>
-      </transition>
+      <!-- Toasts Container Flutuantes -->
+      <div class="fixed top-6 right-6 z-[100] flex flex-col gap-3 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+        <!-- Success Toast -->
+        <transition name="toast">
+          <div
+            v-if="sucesso"
+            class="pointer-events-auto flex items-start gap-3 bg-white border-l-4 border-emerald-500 rounded-xl p-4 shadow-xl border border-rose-100/50"
+          >
+            <div class="bg-emerald-50 p-1.5 rounded-lg text-emerald-600 flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-body font-semibold text-charcoal">Sucesso</h4>
+              <p class="text-xs font-body text-gray-500 mt-0.5 leading-snug break-words">{{ sucesso }}</p>
+            </div>
+            <button @click="sucesso = null" class="text-gray-400 hover:text-gray-600 p-0.5 rounded-lg transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </transition>
 
-      <div v-if="erro && !mostrarFormulario" class="bg-red-50 border border-red-100 text-red-600 text-sm font-body px-4 py-3 rounded-xl mb-6">
-        {{ erro }}
+        <!-- Error Toast -->
+        <transition name="toast">
+          <div
+            v-if="erro"
+            class="pointer-events-auto flex items-start gap-3 bg-white border-l-4 border-red-500 rounded-xl p-4 shadow-xl border border-rose-100/50"
+          >
+            <div class="bg-red-50 p-1.5 rounded-lg text-red-600 flex-shrink-0">
+              <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <div class="flex-1 min-w-0">
+              <h4 class="text-sm font-body font-semibold text-charcoal">Ops! Ocorreu um erro</h4>
+              <p class="text-xs font-body text-gray-500 mt-0.5 leading-snug break-words">{{ erro }}</p>
+            </div>
+            <button @click="erro = null" class="text-gray-400 hover:text-gray-600 p-0.5 rounded-lg transition-colors">
+              <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+          </div>
+        </transition>
       </div>
 
       <!-- Loading -->
@@ -263,6 +404,9 @@ async function deletar(produto) {
                 </td>
                 <td class="px-5 py-3">
                   <span class="font-display font-semibold text-rose-500">R$ {{ p.preco.toFixed(2) }}</span>
+                  <span v-if="p.purchasePrice !== null && p.purchasePrice !== undefined" class="block text-[10px] text-gray-400 font-body leading-tight mt-0.5">
+                    Custo: R$ {{ p.purchasePrice.toFixed(2) }}
+                  </span>
                 </td>
                 <td class="px-5 py-3 hidden lg:table-cell">
                   <span
@@ -316,7 +460,12 @@ async function deletar(produto) {
               <div class="flex-1 min-w-0">
                 <p class="text-xs font-body text-rose-400 uppercase tracking-wider mb-0.5">{{ p.categoria }}</p>
                 <p class="font-body font-semibold text-charcoal text-sm leading-snug truncate">{{ p.nome }}</p>
-                <p class="font-display text-rose-500 font-semibold text-base mt-1">R$ {{ p.preco.toFixed(2) }}</p>
+                <p class="font-display text-rose-500 font-semibold text-base mt-1">
+                  R$ {{ p.preco.toFixed(2) }}
+                  <span v-if="p.purchasePrice !== null && p.purchasePrice !== undefined" class="inline-block text-[10px] text-gray-400 font-body ml-2">
+                    (Custo: R$ {{ p.purchasePrice.toFixed(2) }})
+                  </span>
+                </p>
                 <p class="text-xs text-gray-400 font-body">{{ p.estoque }} em estoque</p>
               </div>
             </div>
@@ -383,9 +532,6 @@ async function deletar(produto) {
           <!-- Modal body -->
           <div class="overflow-y-auto flex-1 px-6 py-5 space-y-5">
 
-            <div v-if="erro" class="bg-red-50 border border-red-100 text-red-600 text-sm font-body px-4 py-3 rounded-xl">
-              {{ erro }}
-            </div>
 
             <!-- Imagens existentes -->
             <div v-if="editandoId && produtoEditando && produtoEditando.imagens && produtoEditando.imagens.length > 0">
@@ -487,6 +633,55 @@ async function deletar(produto) {
               ></textarea>
             </div>
 
+            <!-- Custo e Sugestão de Preço -->
+            <div class="border-t border-rose-50/50 pt-4">
+              <h3 class="text-xs font-body font-semibold text-rose-500 uppercase tracking-widest mb-3">Custos e Margem</h3>
+              <div class="grid grid-cols-2 gap-4 mb-3">
+                <div>
+                  <label class="block text-xs font-body font-semibold text-gray-600 mb-1.5 tracking-wide">
+                    Valor de compra (R$)
+                  </label>
+                  <input
+                    v-model="form.purchasePrice"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0,00"
+                    class="w-full border border-rose-100 rounded-xl px-4 py-2.5 text-sm font-body text-charcoal placeholder-gray-300 focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-body font-semibold text-gray-600 mb-1.5 tracking-wide">
+                    Margem de Lucro (%)
+                  </label>
+                  <input
+                    v-model="form.profitMargin"
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    class="w-full border border-rose-100 rounded-xl px-4 py-2.5 text-sm font-body text-charcoal placeholder-gray-300 focus:border-rose-300 focus:ring-2 focus:ring-rose-100 transition-all"
+                  />
+                </div>
+              </div>
+              
+              <!-- Sugestão visual -->
+              <div v-if="precoSugerido !== null" class="flex items-center justify-between bg-emerald-50/50 border border-emerald-100/50 rounded-xl p-3.5 mb-4">
+                <div>
+                  <p class="text-xs font-body text-emerald-700">Preço sugerido:</p>
+                  <p class="font-display font-semibold text-lg text-emerald-800">
+                    R$ {{ precoSugerido.toFixed(2) }}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  @click="usarPrecoSugerido"
+                  class="text-xs font-body font-semibold text-white bg-emerald-600 hover:bg-emerald-700 px-4 py-2 rounded-full transition-all shadow-sm shadow-emerald-100"
+                >
+                  Usar preço sugerido
+                </button>
+              </div>
+            </div>
+
             <!-- Preço + Estoque -->
             <div class="grid grid-cols-2 gap-4">
               <div>
@@ -539,6 +734,54 @@ async function deletar(produto) {
       </div>
     </transition>
 
+    <!-- Modal de Confirmação Customizado -->
+    <transition name="modal">
+      <div
+        v-if="confirmacaoModal.aberto"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[200] flex items-center justify-center p-4"
+        @click.self="fecharConfirmacao"
+      >
+        <div 
+          class="bg-white w-full max-w-sm rounded-2xl p-6 shadow-2xl border border-rose-50/10 transition-all transform scale-100"
+          style="box-shadow: 0 20px 50px rgba(0,0,0,0.15)"
+        >
+          <div class="flex items-center gap-3 mb-4">
+            <div 
+              :class="confirmacaoModal.isPerigoso ? 'bg-red-50 text-red-600' : 'bg-rose-50 text-rose-500'" 
+              class="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 class="font-display font-semibold text-lg text-charcoal leading-none">
+              {{ confirmacaoModal.titulo }}
+            </h3>
+          </div>
+          
+          <p class="text-sm font-body text-gray-500 mb-6 leading-relaxed">
+            {{ confirmacaoModal.mensagem }}
+          </p>
+          
+          <div class="flex gap-3">
+            <button
+              @click="fecharConfirmacao"
+              class="flex-1 text-sm font-body font-medium text-gray-500 hover:text-gray-700 bg-gray-50 hover:bg-gray-100 py-2.5 rounded-xl transition-all"
+            >
+              {{ confirmacaoModal.cancelarTexto }}
+            </button>
+            <button
+              @click="executarConfirmacao"
+              :class="confirmacaoModal.isPerigoso ? 'bg-red-500 hover:bg-red-600 shadow-red-100' : 'bg-rose-500 hover:bg-rose-600 shadow-rose-100'"
+              class="flex-1 text-sm font-body font-semibold text-white py-2.5 rounded-xl transition-all shadow-md"
+            >
+              {{ confirmacaoModal.confirmarTexto }}
+            </button>
+          </div>
+        </div>
+      </div>
+    </transition>
+
   </div>
 </template>
 
@@ -550,4 +793,8 @@ async function deletar(produto) {
 .modal-enter-active .bg-white, .modal-leave-active .bg-white { transition: transform 0.3s ease; }
 .modal-enter-from .bg-white { transform: translateY(20px); }
 .modal-leave-to .bg-white { transform: translateY(20px); }
+
+.toast-enter-active, .toast-leave-active { transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+.toast-enter-from { opacity: 0; transform: translateX(30px) scale(0.9); }
+.toast-leave-to { opacity: 0; transform: translateY(-20px) scale(0.9); }
 </style>

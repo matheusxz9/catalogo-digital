@@ -14,6 +14,8 @@ class ProdutoBase(BaseModel):
     preco: float = Field(..., gt=0)
     estoque: int = Field(0, ge=0)
     categoria: str = Field(..., min_length=1, max_length=100)
+    purchasePrice: Optional[float] = Field(None, ge=0)
+    profitMargin: Optional[float] = Field(None, ge=0)
  
 class ProdutoUpdate(ProdutoBase):
     nome: Optional[str] = Field(None, min_length=1, max_length=200)

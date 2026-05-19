@@ -44,6 +44,8 @@ async def criar_produto(
     preco: float = Form(...),
     estoque: int = Form(0),
     categoria: str = Form(...),
+    purchasePrice: Optional[float] = Form(None),
+    profitMargin: Optional[float] = Form(None),
     imagens: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_admin_atual),
@@ -51,6 +53,7 @@ async def criar_produto(
     produto = models.Produto(
         nome=nome, descricao=descricao, preco=preco,
         estoque=estoque, categoria=categoria,
+        purchasePrice=purchasePrice, profitMargin=profitMargin,
     )
     db.add(produto)
     db.flush()
@@ -152,15 +155,20 @@ def deletar_imagem(
     if imagem.imagem_public_id:
         cloudinary_service.deletar_imagem(imagem.imagem_public_id)
     db.delete(imagem)
+    db.flush()
  
     produto = db.query(models.Produto).filter(models.Produto.id == id).first()
-    for i, img in enumerate(sorted(produto.imagens, key=lambda x: x.ordem)):
+    
+    imagens_restantes = db.query(models.ProdutoImagem).filter(
+        models.ProdutoImagem.produto_id == id
+    ).order_by(models.ProdutoImagem.ordem).all()
+    
+    for i, img in enumerate(imagens_restantes):
         img.ordem = i
  
-    if produto.imagens:
-        primeira = min(produto.imagens, key=lambda x: x.ordem)
-        produto.imagem_url = primeira.imagem_url
-        produto.imagem_public_id = primeira.imagem_public_id
+    if imagens_restantes:
+        produto.imagem_url = imagens_restantes[0].imagem_url
+        produto.imagem_public_id = imagens_restantes[0].imagem_public_id
     else:
         produto.imagem_url = None
         produto.imagem_public_id = None

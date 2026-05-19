@@ -53,6 +53,19 @@ async function enviarAutenticado(metodo, caminho, corpo) {
   return resposta.json();
 }
  
+async function getAutenticado(caminho) {
+  const token = localStorage.getItem("token");
+  const resposta = await fetch(`${BASE_URL}${caminho}`, {
+    method: "GET",
+    headers: token ? { Authorization: `Bearer ${token}` } : {},
+  });
+  if (!resposta.ok) {
+    const erro = await resposta.json().catch(() => ({}));
+    throw new Error(erro.detail || `Erro ${resposta.status}`);
+  }
+  return resposta.json();
+}
+ 
 async function deletarAutenticado(caminho) {
   const token = localStorage.getItem("token");
   const resposta = await fetch(`${BASE_URL}${caminho}`, {
@@ -69,6 +82,7 @@ export const api = {
   listarProdutos: () => get("/produtos"),
   buscarProduto: (id) => get(`/produtos/${id}`),
   login: (email, senha) => enviar("POST", "/admin/login", { email, senha }),
+  obterAdmin: () => getAutenticado("/admin/me"),
  
   // Criar produto com até 4 imagens
   criarProduto: (formData) => enviarForm("POST", "/produtos", formData),
@@ -86,4 +100,3 @@ export const api = {
   // Deletar produto
   deletarProduto: (id) => deletarAutenticado(`/produtos/${id}`),
 };
- 
