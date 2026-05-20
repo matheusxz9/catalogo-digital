@@ -7,6 +7,13 @@ import os
 
 load_dotenv()
 
+# Run database migrations
+import migrate
+try:
+    migrate.run_migration()
+except Exception as e:
+    print(f"Migration error: {e}")
+
 from database import engine, Base, SessionLocal
 import models
 from auth import hash_senha
