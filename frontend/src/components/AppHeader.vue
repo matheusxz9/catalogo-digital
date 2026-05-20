@@ -49,25 +49,37 @@ onMounted(() => {
           </div>
         </a>
 
-        <!-- Nav desktop -->
-        <nav class="hidden sm:flex items-center gap-6">
-          <a
-            href="/"
-            class="text-sm font-body font-medium text-gray-500 hover:text-rose-500 transition-colors duration-200 tracking-wide"
-          >
-            Catálogo
-          </a>
+        <!-- Actions (Desktop Nav, Mobile Admin Link, and Theme Toggle) -->
+        <div class="flex items-center gap-2 sm:gap-4">
+          <!-- Nav desktop -->
+          <nav class="hidden sm:flex items-center gap-6 mr-2">
+            <a
+              href="/"
+              class="text-sm font-body font-medium text-gray-500 hover:text-rose-500 transition-colors duration-200 tracking-wide"
+            >
+              Catálogo
+            </a>
+            <a
+              href="/admin"
+              class="text-sm font-body font-medium text-gray-400 hover:text-rose-400 transition-colors duration-200 border border-rose-100 hover:border-rose-300 px-4 py-1.5 rounded-full"
+            >
+              Admin
+            </a>
+          </nav>
+
+          <!-- Mobile admin link -->
           <a
             href="/admin"
-            class="text-sm font-body font-medium text-gray-400 hover:text-rose-400 transition-colors duration-200 border border-rose-100 hover:border-rose-300 px-4 py-1.5 rounded-full"
+            class="sm:hidden text-xs font-body text-gray-400 hover:text-rose-400 transition-colors border border-rose-100 px-3 py-1.5 rounded-full"
           >
             Admin
           </a>
-          <!-- Theme toggle -->
+
+          <!-- Theme toggle (Visible for both mobile and desktop) -->
           <button
             @click="toggleTheme"
             :aria-pressed="isDark.toString()"
-            class="ml-2 p-2.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors"
+            class="p-2.5 rounded-full bg-rose-50 hover:bg-rose-100 text-rose-500 transition-colors"
             title="Alternar tema claro/escuro"
           >
             <svg v-if="!isDark" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5 transition-transform hover:rotate-45 duration-300">
@@ -77,15 +89,7 @@ onMounted(() => {
               <path stroke-linecap="round" stroke-linejoin="round" d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z" />
             </svg>
           </button>
-        </nav>
-
-        <!-- Mobile admin link -->
-        <a
-          href="/admin"
-          class="sm:hidden text-xs font-body text-gray-400 hover:text-rose-400 transition-colors border border-rose-100 px-3 py-1.5 rounded-full"
-        >
-          Admin
-        </a>
+        </div>
 
       </div>
     </div>

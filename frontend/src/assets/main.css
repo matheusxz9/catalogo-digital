@@ -42,6 +42,11 @@ html, body, #app {
 [data-theme="dark"] .text-gray-500 { color: var(--muted) !important; }
 [data-theme="dark"] .text-gray-400 { color: var(--muted) !important; }
 [data-theme="dark"] .border-rose-50 { border-color: var(--border) !important; }
+[data-theme="dark"] .border-rose-100 { border-color: var(--border) !important; }
 [data-theme="dark"] .bg-blush-50 { background-color: rgba(255,240,245,0.02) !important; }
 [data-theme="dark"] .bg-blush-100 { background-color: rgba(255,240,245,0.03) !important; }
 [data-theme="dark"] .ring-rose-200 { box-shadow: 0 0 0 2px rgba(244,114,182,0.06) !important; }
+[data-theme="dark"] header { box-shadow: 0 1px 16px rgba(0, 0, 0, 0.25) !important; }
+[data-theme="dark"] .bg-rose-50 { background-color: rgba(244, 114, 182, 0.1) !important; }
+[data-theme="dark"] .hover\:bg-rose-100:hover { background-color: rgba(244, 114, 182, 0.2) !important; }
+[data-theme="dark"] .text-rose-500 { color: #f472b6 !important; }
