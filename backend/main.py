@@ -54,7 +54,7 @@ def criar_admin_inicial():
             )
             db.add(admin_obj)
             db.commit()
-            print(f"Admin criado: {email} / senha: {senha}")
+            print(f"Admin criado: {email}")
     finally:
         db.close()
 
