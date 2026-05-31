@@ -1,14 +1,27 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import CatalogoView from '@/views/CatalogoView.vue'
-import ProdutoView from '@/views/ProdutoView.vue'
-import AdminLoginView from '@/views/AdminLoginView.vue'
-import AdminView from '@/views/AdminView.vue'
 
 const routes = [
-  { path: '/', name: 'Catalogo', component: CatalogoView },
-  { path: '/produto/:id', name: 'Produto', component: ProdutoView },
-  { path: '/admin/login', name: 'AdminLogin', component: AdminLoginView },
-  { path: '/admin', name: 'Admin', component: AdminView, meta: { requiresAuth: true } },
+  {
+    path: '/',
+    name: 'Catalogo',
+    component: () => import('@/views/CatalogoView.vue'),
+  },
+  {
+    path: '/produto/:id',
+    name: 'Produto',
+    component: () => import('@/views/ProdutoView.vue'),
+  },
+  {
+    path: '/admin/login',
+    name: 'AdminLogin',
+    component: () => import('@/views/AdminLoginView.vue'),
+  },
+  {
+    path: '/admin',
+    name: 'Admin',
+    component: () => import('@/views/AdminView.vue'),
+    meta: { requiresAuth: true },
+  },
 ]
 
 const router = createRouter({

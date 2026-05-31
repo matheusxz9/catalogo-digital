@@ -27,7 +27,7 @@ async function entrar() {
 <template>
   <div class="min-h-screen flex items-center justify-center px-4"
     :style="{ background: 'linear-gradient(135deg, var(--bg), var(--accent-soft))' }">
-    <div class="w-full max-w-sm animate-fade-up">
+    <div class="w-full max-w-sm animate-fade-in-up">
       <button @click="router.push('/')"
         class="flex items-center gap-1.5 text-sm font-medium mb-6 transition-all duration-200 group"
         :style="{ color: 'var(--text-dim)' }">
@@ -37,8 +37,7 @@ async function entrar() {
         Voltar ao catálogo
       </button>
 
-      <div class="glass-strong rounded-2xl p-8">
-
+      <div class="glass-premium rounded-2xl p-8">
         <div class="text-center mb-8">
           <div class="inline-flex items-center justify-center w-14 h-14 rounded-2xl mb-4"
             :style="{ background: 'var(--accent-soft)' }">
@@ -51,7 +50,7 @@ async function entrar() {
           <p class="text-xs mt-1 tracking-wide" :style="{ color: 'var(--text-dim)' }">Studio Bella Mizi</p>
         </div>
 
-        <div v-if="erro" class="px-4 py-3 rounded-xl text-sm mb-5 animate-fade-up"
+        <div v-if="erro" class="px-4 py-3 rounded-xl text-sm mb-5 animate-fade-in-up"
           :style="{ background: 'rgba(var(--ctp-red), 0.1)', color: 'var(--ctp-red)', border: '1px solid rgba(var(--ctp-red), 0.15)' }">
           {{ erro }}
         </div>
@@ -60,12 +59,12 @@ async function entrar() {
           <div>
             <label class="block text-xs font-medium mb-1.5" :style="{ color: 'var(--text-dim)' }">Email</label>
             <input v-model="email" type="email" required autocomplete="email"
-              class="input-field w-full" placeholder="seu@email.com" />
+              class="input-field" placeholder="seu@email.com" />
           </div>
           <div>
             <label class="block text-xs font-medium mb-1.5" :style="{ color: 'var(--text-dim)' }">Senha</label>
             <input v-model="senha" type="password" required autocomplete="current-password"
-              class="input-field w-full" placeholder="••••••••" />
+              class="input-field" placeholder="••••••••" />
           </div>
           <button type="submit" :disabled="carregando"
             class="btn-primary w-full justify-center text-base py-3.5"

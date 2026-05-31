@@ -3,6 +3,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useProdutosStore } from '@/stores/produtos'
 import ProdutoCard from '@/components/ProdutoCard.vue'
 import AppHeader from '@/components/AppHeader.vue'
+import AppFooter from '@/components/AppFooter.vue'
 
 const store = useProdutosStore()
 const categoriaAtiva = ref('Todos')
@@ -56,27 +57,44 @@ onMounted(() => {
   <div class="min-h-screen" :style="{ background: 'var(--bg)' }">
     <AppHeader />
 
-    <section class="relative overflow-hidden py-16 sm:py-20"
+    <section class="relative overflow-hidden py-16 sm:py-20 lg:py-24"
       :style="{ background: 'linear-gradient(135deg, var(--accent-soft), transparent 60%)' }">
       <div class="absolute inset-0 opacity-[0.03]"
         style="background-image: radial-gradient(circle at 25% 25%, var(--accent) 1px, transparent 1px); background-size: 40px 40px;">
       </div>
+      <div class="absolute top-10 left-10 w-64 h-64 rounded-full opacity-[0.04] blur-3xl"
+        :style="{ background: 'var(--accent)' }"></div>
+      <div class="absolute bottom-10 right-10 w-48 h-48 rounded-full opacity-[0.03] blur-3xl"
+        :style="{ background: 'rgb(var(--ctp-pink))' }"></div>
+
       <div class="relative max-w-6xl mx-auto px-4 sm:px-6 text-center">
-        <p class="text-xs font-semibold tracking-[0.3em] uppercase mb-4 animate-fade-up"
-          :style="{ color: 'var(--text-dim)' }">Bem-vinda ao</p>
-        <h1 class="font-display text-4xl sm:text-5xl lg:text-6xl font-light tracking-wide mb-3 animate-fade-up"
-          :style="{ animationDelay: '0.1s' }">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-[0.2em] mb-5 glass"
+          :style="{ color: 'var(--accent)' }">
+          <span class="w-1.5 h-1.5 rounded-full animate-pulse-glow" :style="{ background: 'var(--accent)' }"></span>
+          Catálogo Digital
+        </span>
+        <h1 class="font-display text-4xl sm:text-5xl lg:text-7xl font-light tracking-wide mb-4 animate-fade-in-up">
           <span class="gradient-text">Studio Bella Mizi</span>
         </h1>
-        <p class="text-sm sm:text-base max-w-lg mx-auto leading-relaxed animate-fade-up"
-          :style="{ color: 'var(--text-dim)', animationDelay: '0.2s' }">
+        <p class="text-sm sm:text-base max-w-lg mx-auto leading-relaxed animate-fade-in-up"
+          :style="{ color: 'var(--text-dim)' }"
+          style="animation-delay: 0.15s">
           Produtos selecionados com cuidado para realçar sua beleza natural
         </p>
+        <div class="flex items-center justify-center gap-3 mt-6 animate-fade-in-up" style="animation-delay: 0.25s">
+          <span v-for="cat in store.categorias.slice(0, 4)" :key="cat" @click="categoriaAtiva = cat; favoritosVisiveis = false"
+            class="px-4 py-2 rounded-full text-xs font-medium cursor-pointer transition-all duration-200 glass hover-lift"
+            :class="categoriaAtiva === cat ? 'active-cat' : ''"
+            :style="categoriaAtiva === cat
+              ? { background: 'var(--accent-gradient)', color: 'white', boxShadow: '0 2px 8px var(--accent-glow)' }
+              : { color: 'var(--text-dim)' }">
+            {{ cat }}
+          </span>
+        </div>
       </div>
     </section>
 
     <main class="max-w-6xl mx-auto px-4 sm:px-6 py-8 pb-20">
-
       <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
         <div class="flex flex-wrap items-center gap-2">
           <button v-for="cat in store.categorias" :key="cat"
@@ -92,7 +110,7 @@ onMounted(() => {
             :style="favoritosVisiveis
               ? { background: 'var(--accent-gradient)', color: 'white', boxShadow: '0 2px 8px var(--accent-glow)' }
               : { background: 'var(--bg-card-solid)', color: 'var(--text-dim)', border: '1px solid var(--border)' }">
-            ❤️ Favoritos ({{ favoritos.size }})
+            Favoritos ({{ favoritos.size }})
           </button>
         </div>
 
@@ -115,27 +133,24 @@ onMounted(() => {
       </div>
 
       <div v-if="store.carregando" class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
-        <div v-for="n in 8" :key="n" class="overflow-hidden rounded-2xl" :style="{ border: '1px solid var(--border)' }">
+        <div v-for="n in 8" :key="n" class="rounded-2xl overflow-hidden" :style="{ border: '1px solid var(--border)' }">
           <div class="skeleton aspect-square"></div>
           <div class="p-4 space-y-2" :style="{ background: 'var(--bg-card-solid)' }">
             <div class="skeleton h-4 w-3/4 rounded-full"></div>
             <div class="skeleton h-3 w-full rounded-full"></div>
-            <div class="skeleton h-3 w-2/3 rounded-full"></div>
-            <div class="flex justify-between mt-3 pt-3" :style="{ borderTop: '1px solid var(--border)' }">
-              <div class="skeleton h-5 w-16 rounded-full"></div>
-              <div class="skeleton h-5 w-12 rounded-full"></div>
-            </div>
+            <div class="skeleton h-5 w-16 rounded-full mt-3"></div>
           </div>
         </div>
       </div>
 
       <div v-else-if="filtrados.length > 0"
-        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5 stagger-enter">
-        <ProdutoCard v-for="(produto, idx) in filtrados" :key="produto.id" :produto="produto" :index="idx"
+        class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
+        <ProdutoCard v-for="(produto, idx) in filtrados" :key="produto.id" :produto="produto"
+          :style="{ animation: `fadeInUp 0.4s ease ${idx * 0.05}s both` }"
           @favoritar="favoritarProduto(produto)" />
       </div>
 
-      <div v-else class="flex flex-col items-center justify-center py-24 text-center animate-fade-up">
+      <div v-else class="flex flex-col items-center justify-center py-24 text-center animate-fade-in-up">
         <div class="w-16 h-16 rounded-2xl flex items-center justify-center mb-4"
           :style="{ background: 'var(--accent-soft)' }">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -144,17 +159,18 @@ onMounted(() => {
           </svg>
         </div>
         <p class="font-display text-xl font-light" :style="{ color: 'var(--text-dim)' }">
-          {{ busca ? 'Nenhum resultado para "' + busca + '"' : 'Nenhum produto encontrado' }}
+          {{ busca ? `Nenhum resultado para "${busca}"` : 'Nenhum produto encontrado' }}
         </p>
         <button v-if="busca" @click="busca = ''"
           class="btn-ghost mt-3">Limpar busca</button>
       </div>
 
-      <div v-if="store.erro" class="text-center py-16">
-        <p :style="{ color: 'var(--text-dim)' }">{{ store.erro }}</p>
-        <button @click="store.carregar()" class="btn-secondary mt-4">Tentar novamente</button>
+      <div v-if="store.erro" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 px-6 py-3 rounded-xl text-sm shadow-lg animate-fade-in-up"
+        :style="{ background: 'rgba(var(--ctp-red), 0.95)', color: 'white' }">
+        {{ store.erro }}
+        <button @click="store.carregar()" class="underline ml-2 font-semibold">Tentar novamente</button>
       </div>
-
     </main>
+    <AppFooter />
   </div>
 </template>
