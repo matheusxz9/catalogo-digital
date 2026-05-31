@@ -18,7 +18,7 @@ def _validar_imagem(imagem: UploadFile, conteudo: bytes) -> None:
     if len(conteudo) > TAMANHO_MAXIMO_BYTES:
         raise HTTPException(status_code=400, detail="Arquivo muito grande. Máximo: 5MB")
  
-@router.get("/", response_model=List[schemas.ProdutoOut])
+@router.get("/", response_model=List[schemas.ProdutoPublicOut])
 def listar_produtos(db: Session = Depends(get_db)):
     return (
         db.query(models.Produto)
@@ -26,8 +26,8 @@ def listar_produtos(db: Session = Depends(get_db)):
         .order_by(models.Produto.criado_em.desc())
         .all()
     )
- 
-@router.get("/{id}", response_model=schemas.ProdutoOut)
+
+@router.get("/{id}", response_model=schemas.ProdutoPublicOut)
 def buscar_produto(id: int, db: Session = Depends(get_db)):
     produto = db.query(models.Produto).filter(
         models.Produto.id == id,

@@ -25,6 +25,19 @@ class ProdutoUpdate(ProdutoBase):
     categoria: Optional[str] = Field(None, min_length=1, max_length=100)
     ativo: Optional[bool] = None
  
+class ProdutoPublicOut(BaseModel):
+    id: int
+    nome: str
+    descricao: Optional[str] = None
+    preco: float
+    estoque: int
+    categoria: str
+    imagem_url: Optional[str] = None
+    imagens: List[ImagemOut] = []
+    ativo: bool
+    criado_em: datetime
+    model_config = {"from_attributes": True}
+
 class ProdutoOut(ProdutoBase):
     id: int
     imagem_url: Optional[str] = None

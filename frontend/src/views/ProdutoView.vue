@@ -169,11 +169,7 @@ onMounted(async () => {
                 R$ {{ produto.preco.toFixed(2) }}
               </span>
 
-              <div v-if="produto.purchasePrice" class="flex items-center gap-3 mt-2 text-xs" :style="{ color: 'var(--text-dim)' }">
-                <span>Custo: R$ {{ produto.purchasePrice.toFixed(2) }}</span>
-                <span class="w-px h-3" :style="{ background: 'var(--border)' }"></span>
-                <span>Margem: {{ produto.profitMargin || ((produto.preco - produto.purchasePrice) / produto.preco * 100).toFixed(0) }}%</span>
-              </div>
+
             </div>
 
             <div class="mt-6 space-y-3">

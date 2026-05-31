@@ -37,19 +37,50 @@ const deletandoId = ref(null)
 
 const sidebarAberta = ref(false)
 
+const buscaAdmin = ref('')
+const filtroCategoria = ref('')
+const filtroAtivo = ref('todos')
+
+const categoriasAdmin = computed(() => {
+  const cats = [...new Set(produtos.value.map(p => p.categoria))]
+  return cats.sort()
+})
+
+const produtosFiltrados = computed(() => {
+  let lista = produtos.value
+  if (filtroAtivo.value === 'ativos') {
+    lista = lista.filter(p => p.ativo)
+  } else if (filtroAtivo.value === 'inativos') {
+    lista = lista.filter(p => !p.ativo)
+  }
+  if (filtroCategoria.value) {
+    lista = lista.filter(p => p.categoria === filtroCategoria.value)
+  }
+  if (buscaAdmin.value.trim()) {
+    const q = buscaAdmin.value.toLowerCase().trim()
+    lista = lista.filter(p =>
+      p.nome.toLowerCase().includes(q) ||
+      p.descricao?.toLowerCase().includes(q) ||
+      p.categoria.toLowerCase().includes(q)
+    )
+  }
+  return lista
+})
+
 const stats = computed(() => {
   if (!produtos.value.length) return []
-  const total = produtos.value.length
-  const valorTotal = produtos.value.reduce((s, p) => s + p.preco * p.estoque, 0)
-  const custoTotal = produtos.value.reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0)
-  const margemMedia = produtos.value.reduce((s, p) => {
+  const ativos = produtos.value.filter(p => p.ativo)
+  const total = ativos.length
+  const valorTotal = ativos.reduce((s, p) => s + p.preco * p.estoque, 0)
+  const custoTotal = ativos.reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0)
+  const margemMedia = ativos.reduce((s, p) => {
     if (p.purchasePrice && p.preco > p.purchasePrice) {
       return s + ((p.preco - p.purchasePrice) / p.preco * 100)
     }
     return s
-  }, 0) / produtos.value.filter(p => p.purchasePrice).length || 0
+  }, 0) / ativos.filter(p => p.purchasePrice).length || 0
   return [
-    { label: 'Produtos', valor: total, icone: 'package', cor: 'mauve' },
+    { label: 'Produtos Ativos', valor: total, icone: 'package', cor: 'mauve' },
     { label: 'Valor em Estoque', valor: `R$ ${valorTotal.toFixed(2)}`, icone: 'currency-dollar', cor: 'green' },
     { label: 'Custo Total', valor: `R$ ${custoTotal.toFixed(2)}`, icone: 'trending-down', cor: 'peach' },
     { label: 'Margem Média', valor: `${margemMedia.toFixed(1)}%`, icone: 'chart-bar', cor: 'sky' },
@@ -57,16 +88,15 @@ const stats = computed(() => {
 })
 
 const produtosPorCategoria = computed(() => {
+  const ativos = produtos.value.filter(p => p.ativo)
   const map = {}
-  produtos.value.forEach(p => {
-    map[p.categoria] = (map[p.categoria] || 0) + 1
-  })
+  ativos.forEach(p => { map[p.categoria] = (map[p.categoria] || 0) + 1 })
   return Object.entries(map).sort((a, b) => b[1] - a[1])
 })
 
 const produtosFinanceiro = computed(() => {
   return produtos.value
-    .filter(p => p.purchasePrice)
+    .filter(p => p.ativo && p.purchasePrice)
     .map(p => ({
       ...p,
       lucroUni: p.preco - p.purchasePrice,
@@ -152,6 +182,26 @@ async function deletar() {
   }
 }
 
+async function duplicar(id) {
+  try {
+    await api.duplicarProduto(id)
+    notificar('Produto duplicado')
+    await carregar()
+  } catch (e) {
+    notificar(e.message || 'Erro ao duplicar', 'erro')
+  }
+}
+
+async function toggleAtivo(id) {
+  try {
+    const p = await api.toggleAtivo(id)
+    notificar(p.ativo ? 'Produto ativado' : 'Produto desativado')
+    await carregar()
+  } catch (e) {
+    notificar(e.message || 'Erro ao alterar status', 'erro')
+  }
+}
+
 function logout() {
   localStorage.removeItem('token')
   router.push('/')
@@ -159,7 +209,7 @@ function logout() {
 
 async function carregar() {
   try {
-    produtos.value = await api.listarProdutos()
+    produtos.value = await api.listarProdutosAdmin()
   } catch (e) {
     erro.value = e.message
   } finally {
@@ -181,19 +231,13 @@ onMounted(async () => {
 <template>
   <div class="min-h-screen flex" :style="{ background: 'var(--bg)' }">
     <Teleport to="body">
-      <div
-        v-if="sidebarAberta"
-        class="fixed inset-0 z-40 lg:hidden"
-        style="background: rgba(0,0,0,0.3);"
-        @click="sidebarAberta = false"
-      ></div>
+      <div v-if="sidebarAberta" class="fixed inset-0 z-40 lg:hidden"
+        style="background: rgba(0,0,0,0.3);" @click="sidebarAberta = false"></div>
     </Teleport>
 
-    <aside
-      class="fixed lg:sticky top-0 left-0 z-50 h-full w-64 flex-shrink-0 transition-transform duration-300 lg:translate-x-0"
+    <aside class="fixed lg:sticky top-0 left-0 z-50 h-full w-64 flex-shrink-0 transition-transform duration-300 lg:translate-x-0"
       :class="sidebarAberta ? 'translate-x-0' : '-translate-x-full'"
-      :style="{ background: 'var(--bg-card-solid)', borderRight: '1px solid var(--border)' }"
-    >
+      :style="{ background: 'var(--bg-card-solid)', borderRight: '1px solid var(--border)' }">
       <div class="flex flex-col h-full">
         <div class="p-5 border-b flex items-center justify-between" :style="{ borderColor: 'var(--border)' }">
           <div class="flex items-center gap-2.5">
@@ -275,7 +319,9 @@ onMounted(async () => {
             <h1 class="font-display text-lg font-semibold leading-tight" :style="{ color: 'var(--text-bright)' }">
               {{ aba === 'dashboard' ? 'Dashboard' : aba === 'produtos' ? 'Produtos' : 'Financeiro' }}
             </h1>
-            <p class="text-[11px]" :style="{ color: 'var(--text-dim)' }">{{ produtos.length }} produtos no catálogo</p>
+            <p class="text-[11px]" :style="{ color: 'var(--text-dim)' }">
+              {{ produtos.filter(p => p.ativo).length }} ativos · {{ produtos.length }} total
+            </p>
           </div>
         </div>
         <div class="flex items-center gap-2">
@@ -291,8 +337,7 @@ onMounted(async () => {
           </button>
           <router-link to="/"
             class="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
-            :style="{ background: 'var(--surface0)', color: 'var(--text-dim)' }"
-            title="Ver catálogo">
+            :style="{ background: 'var(--surface0)', color: 'var(--text-dim)' }" title="Ver catálogo">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
               <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 12l8.954-8.955a1.126 1.126 0 011.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
             </svg>
@@ -362,7 +407,7 @@ onMounted(async () => {
                     </div>
                     <div class="h-2 rounded-full overflow-hidden" :style="{ background: 'var(--surface0)' }">
                       <div class="h-full rounded-full transition-all duration-500" :style="{
-                        width: `${(qtd / produtos.length) * 100}%`,
+                        width: `${(qtd / Math.max(...Object.values(produtosPorCategoria.map(([,q]) => q)))) * 100}%`,
                         background: 'var(--accent-gradient)',
                       }"></div>
                     </div>
@@ -371,24 +416,24 @@ onMounted(async () => {
               </div>
 
               <div class="card-premium p-5">
-                <h3 class="font-display text-base font-semibold mb-4" :style="{ color: 'var(--text-bright)' }">Estoque</h3>
+                <h3 class="font-display text-base font-semibold mb-4" :style="{ color: 'var(--text-bright)' }">Resumo do Estoque</h3>
                 <div class="space-y-3">
                   <div class="flex items-center justify-between text-sm" :style="{ color: 'var(--text-dim)' }">
                     <span>Total em estoque</span>
                     <span class="font-semibold" :style="{ color: 'var(--text-bright)' }">
-                      {{ produtos.reduce((s, p) => s + p.estoque, 0) }} unidades
+                      {{ produtos.filter(p => p.ativo).reduce((s, p) => s + p.estoque, 0) }} unidades
                     </span>
                   </div>
                   <div class="flex items-center justify-between text-sm" :style="{ color: 'var(--text-dim)' }">
                     <span>Valor total</span>
                     <span class="font-display font-semibold gradient-text">
-                      R$ {{ produtos.reduce((s, p) => s + p.preco * p.estoque, 0).toFixed(2) }}
+                      R$ {{ produtos.filter(p => p.ativo).reduce((s, p) => s + p.preco * p.estoque, 0).toFixed(2) }}
                     </span>
                   </div>
                   <div class="flex items-center justify-between text-sm" :style="{ color: 'var(--text-dim)' }">
                     <span>Custo total</span>
                     <span class="font-semibold" :style="{ color: 'var(--text-bright)' }">
-                      R$ {{ produtos.reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0).toFixed(2) }}
+                      R$ {{ produtos.filter(p => p.ativo).reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0).toFixed(2) }}
                     </span>
                   </div>
                 </div>
@@ -397,7 +442,24 @@ onMounted(async () => {
           </div>
 
           <div v-if="aba === 'produtos'" class="animate-fade-in-up">
-            <div class="flex items-center justify-between mb-6">
+            <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="relative">
+                  <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" :style="{ color: 'var(--text-dim)' }" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+                  </svg>
+                  <input v-model="buscaAdmin" placeholder="Buscar..." class="input-field pl-9 w-40 sm:w-56 text-sm" />
+                </div>
+                <select v-model="filtroCategoria" class="input-field w-auto text-sm">
+                  <option value="">Todas categorias</option>
+                  <option v-for="cat in categoriasAdmin" :key="cat" :value="cat">{{ cat }}</option>
+                </select>
+                <select v-model="filtroAtivo" class="input-field w-auto text-sm">
+                  <option value="todos">Todos</option>
+                  <option value="ativos">Ativos</option>
+                  <option value="inativos">Inativos</option>
+                </select>
+              </div>
               <button @click="abrirForm()" class="btn-primary text-sm">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-4 h-4">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -438,7 +500,10 @@ onMounted(async () => {
                   </div>
                   <div>
                     <label class="block text-xs font-medium mb-1.5" :style="{ color: 'var(--text-dim)' }">Categoria</label>
-                    <input v-model="form.categoria" required class="input-field" placeholder="Ex: Skincare" />
+                    <input v-model="form.categoria" required class="input-field" placeholder="Ex: Skincare" list="categorias-suggest" />
+                    <datalist id="categorias-suggest">
+                      <option v-for="cat in categoriasAdmin" :key="cat" :value="cat" />
+                    </datalist>
                   </div>
                   <div>
                     <label class="block text-xs font-medium mb-1.5" :style="{ color: 'var(--text-dim)' }">Preço de Custo (R$)</label>
@@ -476,10 +541,17 @@ onMounted(async () => {
               <button @click="abrirForm()" class="btn-primary mt-6 text-sm">Criar primeiro produto</button>
             </div>
 
-            <div v-else class="space-y-3">
-              <div v-for="p in produtos" :key="p.id" class="card-premium overflow-hidden">
+            <div v-else-if="!produtosFiltrados.length" class="flex flex-col items-center justify-center py-24 text-center">
+              <p class="font-display text-xl font-light" :style="{ color: 'var(--text-dim)' }">Nenhum resultado para os filtros</p>
+              <button @click="buscaAdmin = ''; filtroCategoria = ''; filtroAtivo = 'todos'" class="btn-ghost mt-3 text-sm">Limpar filtros</button>
+            </div>
+
+            <div v-else class="space-y-2">
+              <div v-for="p in produtosFiltrados" :key="p.id"
+                class="card-premium overflow-hidden transition-all"
+                :class="p.ativo ? '' : 'opacity-60 hover:opacity-100'">
                 <div class="flex items-center gap-4 p-4">
-                  <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0" :style="{ background: 'var(--surface0)' }">
+                  <div class="w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 relative" :style="{ background: 'var(--surface0)' }">
                     <img v-if="p.imagem_url" :src="p.imagem_url" :alt="p.nome" class="w-full h-full object-cover" />
                     <div v-else class="w-full h-full flex items-center justify-center">
                       <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"
@@ -487,18 +559,46 @@ onMounted(async () => {
                         <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909m-18 3.75h16.5a1.5 1.5 0 001.5-1.5V6a1.5 1.5 0 00-1.5-1.5H3.75A1.5 1.5 0 002.25 6v12a1.5 1.5 0 001.5 1.5z" />
                       </svg>
                     </div>
+                    <div v-if="!p.ativo" class="absolute inset-0 flex items-center justify-center rounded-xl"
+                      :style="{ background: 'rgba(0,0,0,0.4)' }">
+                      <span class="text-[8px] font-bold uppercase tracking-wider text-white">Inativo</span>
+                    </div>
                   </div>
                   <div class="flex-1 min-w-0">
                     <p class="font-display font-semibold text-sm sm:text-base truncate" :style="{ color: 'var(--text-bright)' }">{{ p.nome }}</p>
-                    <div class="flex flex-wrap items-center gap-2 mt-1">
+                    <div class="flex flex-wrap items-center gap-x-2.5 gap-y-1 mt-1">
                       <span class="text-[10px] px-2 py-0.5 rounded-full" :style="{ background: 'var(--accent-soft)', color: 'var(--accent)' }">{{ p.categoria }}</span>
                       <span class="font-display text-sm font-semibold gradient-text">R$ {{ p.preco.toFixed(2) }}</span>
-                      <span class="text-[10px]" :style="{ color: p.estoque > 0 ? 'var(--ctp-green)' : 'var(--ctp-red)' }">
-                        {{ p.estoque }} em estoque
+                      <span class="text-[10px]" :style="{ color: p.estoque > 0 ? 'rgb(var(--ctp-green))' : 'rgb(var(--ctp-red))' }">
+                        {{ p.estoque }} un.
+                      </span>
+                      <span v-if="p.purchasePrice" class="text-[10px]" :style="{ color: 'var(--text-dim)' }">
+                        Custo: R$ {{ p.purchasePrice.toFixed(2) }}
+                      </span>
+                      <span v-if="p.profitMargin" class="text-[10px]" :style="{ color: 'var(--text-dim)' }">
+                        Margem: {{ p.profitMargin }}%
                       </span>
                     </div>
                   </div>
-                  <div class="flex gap-1.5 flex-shrink-0">
+                  <div class="flex gap-1 flex-shrink-0">
+                    <button @click="toggleAtivo(p.id)"
+                      class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-105"
+                      :style="{ background: 'var(--surface0)', color: p.ativo ? 'rgb(var(--ctp-green))' : 'var(--text-dim)' }"
+                      :title="p.ativo ? 'Desativar' : 'Ativar'">
+                      <svg v-if="p.ativo" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <svg v-else xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5l-4.5 4.5M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </button>
+                    <button @click="duplicar(p.id)"
+                      class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-105"
+                      :style="{ background: 'var(--surface0)', color: 'var(--text-dim)' }" title="Duplicar">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 013.75.808m1.5-2.933V3.375c0-.621.504-1.125 1.125-1.125h9.75c.621 0 1.125.504 1.125 1.125v9.75c0 .621-.504 1.125-1.125 1.125h-1.5a9.06 9.06 0 01-3.75-.808" />
+                      </svg>
+                    </button>
                     <button @click="abrirForm(p)"
                       class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-105"
                       :style="{ background: 'var(--surface0)', color: 'var(--text-dim)' }" title="Editar">
@@ -519,30 +619,30 @@ onMounted(async () => {
             </div>
           </div>
 
-          <div v-if="aba === 'financeiro'" class="space-y-6 animate-fade-in-up">
+          <div v-if="aba === 'financeiro' && !carregando" class="space-y-6 animate-fade-in-up">
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <div class="card-premium p-5">
                 <p class="text-xs mb-1" :style="{ color: 'var(--text-dim)' }">Receita Potencial</p>
                 <p class="text-2xl font-display font-bold gradient-text">
-                  R$ {{ produtos.reduce((s, p) => s + p.preco * p.estoque, 0).toFixed(2) }}
+                  R$ {{ produtos.filter(p => p.ativo).reduce((s, p) => s + p.preco * p.estoque, 0).toFixed(2) }}
                 </p>
               </div>
               <div class="card-premium p-5">
                 <p class="text-xs mb-1" :style="{ color: 'var(--text-dim)' }">Custo Total</p>
                 <p class="text-2xl font-display font-bold" :style="{ color: 'var(--text-bright)' }">
-                  R$ {{ produtos.reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0).toFixed(2) }}
+                  R$ {{ produtos.filter(p => p.ativo).reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0).toFixed(2) }}
                 </p>
               </div>
               <div class="card-premium p-5">
                 <p class="text-xs mb-1" :style="{ color: 'var(--text-dim)' }">Lucro Potencial</p>
                 <p class="text-2xl font-display font-bold" :style="{ color: 'rgb(var(--ctp-green))' }">
-                  R$ {{ (produtos.reduce((s, p) => s + p.preco * p.estoque, 0) - produtos.reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0)).toFixed(2) }}
+                  R$ {{ (produtos.filter(p => p.ativo).reduce((s, p) => s + p.preco * p.estoque, 0) - produtos.filter(p => p.ativo).reduce((s, p) => s + (p.purchasePrice || 0) * p.estoque, 0)).toFixed(2) }}
                 </p>
               </div>
               <div class="card-premium p-5">
                 <p class="text-xs mb-1" :style="{ color: 'var(--text-dim)' }">Produtos com Custo</p>
                 <p class="text-2xl font-display font-bold" :style="{ color: 'var(--text-bright)' }">
-                  {{ produtos.filter(p => p.purchasePrice).length }} / {{ produtos.length }}
+                  {{ produtos.filter(p => p.ativo && p.purchasePrice).length }} / {{ produtos.filter(p => p.ativo).length }}
                 </p>
               </div>
             </div>
@@ -550,26 +650,26 @@ onMounted(async () => {
             <div class="card-premium p-5">
               <h3 class="font-display text-base font-semibold mb-4" :style="{ color: 'var(--text-bright)' }">Lucratividade por Produto</h3>
               <div v-if="!produtosFinanceiro.length" class="text-center py-8">
-                <p class="text-sm" :style="{ color: 'var(--text-dim)' }">Nenhum produto com preço de custo cadastrado.</p>
-                <p class="text-xs mt-1" :style="{ color: 'var(--text-dim)' }">Edite um produto e adicione o preço de custo para ver a lucratividade.</p>
+                <p class="text-sm" :style="{ color: 'var(--text-dim)' }">Nenhum produto ativo com preço de custo.</p>
+                <p class="text-xs mt-1" :style="{ color: 'var(--text-dim)' }">Edite um produto e adicione custo para ver a lucratividade.</p>
               </div>
-              <div v-else class="space-y-3">
-                <div v-for="p in produtosFinanceiro" :key="p.id" class="flex items-center gap-4 p-3 rounded-xl transition-colors"
+              <div v-else class="space-y-2">
+                <div v-for="p in produtosFinanceiro" :key="p.id" class="flex items-center gap-4 p-3 rounded-xl"
                   :style="{ background: 'var(--surface0)' }">
                   <div class="flex-1 min-w-0">
                     <p class="text-sm font-medium truncate" :style="{ color: 'var(--text-bright)' }">{{ p.nome }}</p>
                     <p class="text-xs" :style="{ color: 'var(--text-dim)' }">{{ p.categoria }}</p>
                   </div>
-                  <div class="text-right">
-                    <p class="text-xs" :style="{ color: 'var(--text-dim)' }">Venda: <span class="font-semibold" :style="{ color: 'var(--text-bright)' }">R$ {{ p.preco.toFixed(2) }}</span></p>
-                    <p class="text-xs" :style="{ color: 'var(--text-dim)' }">Custo: <span class="font-semibold">R$ {{ p.purchasePrice.toFixed(2) }}</span></p>
+                  <div class="text-right text-xs leading-relaxed" :style="{ color: 'var(--text-dim)' }">
+                    <div>Venda: <span class="font-semibold" :style="{ color: 'var(--text-bright)' }">R$ {{ p.preco.toFixed(2) }}</span></div>
+                    <div>Custo: R$ {{ p.purchasePrice.toFixed(2) }}</div>
                   </div>
-                  <div class="text-right min-w-[100px]">
+                  <div class="text-right min-w-[110px]">
                     <p class="text-sm font-semibold" :style="{ color: 'rgb(var(--ctp-green))' }">+R$ {{ p.lucroUni.toFixed(2) }}</p>
                     <div class="flex items-center gap-1.5 mt-0.5">
                       <div class="flex-1 h-1.5 rounded-full overflow-hidden" :style="{ background: 'var(--surface-2)' }">
                         <div class="h-full rounded-full" :style="{
-                          width: `${Math.min(p.margemReal, 100)}%`,
+                          width: `${Math.min(Number(p.margemReal), 100)}%`,
                           background: Number(p.margemReal) > 40 ? 'rgb(var(--ctp-green))' : Number(p.margemReal) > 20 ? 'rgb(var(--ctp-yellow))' : 'rgb(var(--ctp-peach))',
                         }"></div>
                       </div>

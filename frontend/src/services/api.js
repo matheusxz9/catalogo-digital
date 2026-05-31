@@ -62,4 +62,13 @@ export const api = {
   async me() {
     return request('/admin/me')
   },
+  async listarProdutosAdmin() {
+    return request('/admin/produtos')
+  },
+  async duplicarProduto(id) {
+    return request(`/admin/produtos/${id}/duplicar`, { method: 'POST' })
+  },
+  async toggleAtivo(id) {
+    return request(`/admin/produtos/${id}/toggle-ativo`, { method: 'PATCH' })
+  },
 }
