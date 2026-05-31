@@ -12,8 +12,7 @@ const tema = useTemaStore()
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-8">
         <div>
           <div class="flex items-center gap-2.5 mb-3">
-            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold"
-              :style="{ background: 'var(--accent-gradient)' }">SBM</div>
+            <img src="/logo.svg" alt="Studio Bella Mizi" class="w-8 h-8 rounded-lg" />
             <div>
               <p class="font-display text-sm font-semibold" :style="{ color: 'var(--text-bright)' }">Studio Bella Mizi</p>
             </div>

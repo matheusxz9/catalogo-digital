@@ -18,10 +18,7 @@ function isAdminRoute() {
     <div class="max-w-6xl mx-auto px-4 sm:px-6">
       <div class="flex items-center justify-between h-14 sm:h-16">
         <router-link to="/" class="flex items-center gap-2.5 group">
-          <div
-            class="w-8 h-8 rounded-lg flex items-center justify-center text-white text-xs font-bold transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg"
-            :style="{ background: 'var(--accent-gradient)' }"
-          >SBM</div>
+          <img src="/logo.svg" alt="Studio Bella Mizi" class="w-8 h-8 rounded-lg transition-all duration-200 group-hover:scale-110 group-hover:shadow-lg" />
           <div class="hidden sm:block">
             <p class="font-display text-sm font-semibold leading-tight" :style="{ color: 'var(--text-bright)' }">Studio Bella Mizi</p>
             <p class="text-[10px] leading-tight" :style="{ color: 'var(--text-dim)' }">Catálogo Digital</p>

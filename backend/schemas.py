@@ -32,6 +32,7 @@ class ProdutoPublicOut(BaseModel):
     preco: float
     estoque: int
     categoria: str
+    visualizacoes: int = 0
     imagem_url: Optional[str] = None
     imagens: List[ImagemOut] = []
     ativo: bool
@@ -40,6 +41,7 @@ class ProdutoPublicOut(BaseModel):
 
 class ProdutoOut(ProdutoBase):
     id: int
+    visualizacoes: int = 0
     imagem_url: Optional[str] = None
     imagens: List[ImagemOut] = []
     ativo: bool

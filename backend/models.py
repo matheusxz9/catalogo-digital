@@ -16,6 +16,7 @@ class Produto(Base):
     ativo = Column(Boolean, default=True, index=True)
     criado_em = Column(DateTime(timezone=True), server_default=func.now(), index=True)
     atualizado_em = Column(DateTime(timezone=True), onupdate=func.now())
+    visualizacoes = Column(Integer, default=0)
     purchasePrice = Column(Float, nullable=True)
     profitMargin = Column(Float, nullable=True)
  

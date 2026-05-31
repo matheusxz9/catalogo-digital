@@ -21,6 +21,8 @@ def run_migration():
         print("Adding 'purchasePrice' and 'profitMargin' columns if they don't exist...")
         conn.execute(text('ALTER TABLE produtos ADD COLUMN IF NOT EXISTS "purchasePrice" DOUBLE PRECISION;'))
         conn.execute(text('ALTER TABLE produtos ADD COLUMN IF NOT EXISTS "profitMargin" DOUBLE PRECISION;'))
+        print("Adding 'visualizacoes' column if it doesn't exist...")
+        conn.execute(text('ALTER TABLE produtos ADD COLUMN IF NOT EXISTS visualizacoes INTEGER DEFAULT 0;'))
         
         # Add indexes
         print("Creating indexes on 'ativo' and 'criado_em' if they don't exist...")

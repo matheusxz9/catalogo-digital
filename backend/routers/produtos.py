@@ -177,6 +177,18 @@ def deletar_imagem(
     db.refresh(produto)
     return produto
  
+@router.post("/{id}/visualizar")
+def visualizar_produto(id: int, db: Session = Depends(get_db)):
+    produto = db.query(models.Produto).filter(
+        models.Produto.id == id,
+        models.Produto.ativo == True,
+    ).first()
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    produto.visualizacoes = (produto.visualizacoes or 0) + 1
+    db.commit()
+    return {"visualizacoes": produto.visualizacoes}
+
 @router.delete("/{id}", status_code=204)
 def deletar_produto(
     id: int,
@@ -189,6 +201,6 @@ def deletar_produto(
     for img in produto.imagens:
         if img.imagem_public_id:
             cloudinary_service.deletar_imagem(img.imagem_public_id)
-    produto.ativo = False
+    db.delete(produto)
     db.commit()
  

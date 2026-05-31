@@ -53,6 +53,9 @@ export const api = {
   async deletarImagem(produtoId, imagemId) {
     return request(`/produtos/${produtoId}/imagens/${imagemId}`, { method: 'DELETE' })
   },
+  async visualizarProduto(id) {
+    return request(`/produtos/${id}/visualizar`, { method: 'POST' })
+  },
   async login(email, senha) {
     return request('/admin/login', {
       method: 'POST',

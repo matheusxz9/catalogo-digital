@@ -1,6 +1,7 @@
 <script setup>
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { api } from '@/services/api'
 
 const props = defineProps({
   produto: { type: Object, required: true },
@@ -12,6 +13,7 @@ const estoqueBaixo = computed(() => props.produto.estoque > 0 && props.produto.e
 const esgotado = computed(() => props.produto.estoque === 0)
 
 function irParaProduto() {
+  api.visualizarProduto(props.produto.id).catch(() => {})
   router.push({ name: 'Produto', params: { id: props.produto.id } })
 }
 </script>
