@@ -37,7 +37,7 @@ const tema = useTemaStore()
         <div>
           <p class="text-xs font-semibold uppercase tracking-wider mb-3" :style="{ color: 'var(--text-dim)' }">Aparência</p>
           <button @click="tema.toggle()"
-            class="flex items-center gap-2 text-xs transition-all" :style="{ color: 'var(--text-dim)' }"
+            class="flex items-center gap-2 text-xs transition-all cursor-pointer" :style="{ color: 'var(--text-dim)' }"
             @mouseenter="$event.target.style.color = 'var(--accent)'"
             @mouseleave="$event.target.style.color = ''">
             <svg v-if="tema.escuro" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">

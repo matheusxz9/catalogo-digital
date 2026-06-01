@@ -40,7 +40,7 @@ function isAdminRoute() {
 
           <button
             @click="tema.toggle()"
-            class="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-105"
+            class="w-9 h-9 rounded-xl flex items-center justify-center transition-all hover:scale-105 cursor-pointer"
             :style="{ background: 'var(--surface0)', color: 'var(--text-dim)' }"
             :title="tema.escuro ? 'Modo claro' : 'Modo escuro'"
           >
