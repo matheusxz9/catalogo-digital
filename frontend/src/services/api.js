@@ -16,11 +16,11 @@ async function request(path, options = {}) {
   const res = await fetch(`${BASE_URL}${path}`, { ...options, headers })
   if (res.status === 204) return null
 
+  const text = await res.text()
   let data
   try {
-    data = await res.json()
+    data = JSON.parse(text)
   } catch {
-    const text = await res.text()
     throw new Error(
       `Resposta inesperada do servidor (${res.status}): ${text.slice(0, 200)}`,
     )
