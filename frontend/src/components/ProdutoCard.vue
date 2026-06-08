@@ -21,7 +21,7 @@ function irParaProduto() {
 <template>
   <div class="card-premium group cursor-pointer" @click="irParaProduto">
     <div class="relative overflow-hidden" :style="{ background: 'var(--bg)' }">
-      <div class="aspect-square overflow-hidden">
+      <div class="aspect-square overflow-hidden rounded-xl">
         <img
           v-if="produto.imagem_url"
           :src="produto.imagem_url"
