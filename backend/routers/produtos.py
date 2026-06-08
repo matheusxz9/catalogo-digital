@@ -52,6 +52,8 @@ async def criar_produto(
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_admin_atual),
 ):
+    if descricao is not None and descricao.strip().lower() in ('null', 'none', ''):
+        descricao = None
     produto = models.Produto(
         nome=nome, descricao=descricao, preco=preco,
         estoque=estoque, categoria=categoria,
