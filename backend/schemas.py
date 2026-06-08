@@ -34,6 +34,8 @@ class ProdutoPublicOut(BaseModel):
     nome: str
     descricao: Optional[str] = None
     preco: float
+    preco_promocional: Optional[float] = None
+    promocional: bool = False
     estoque: int
     categoria: str
     visualizacoes: int = 0
