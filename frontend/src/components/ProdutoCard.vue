@@ -5,12 +5,27 @@ import { api } from '@/services/api'
 
 const props = defineProps({
   produto: { type: Object, required: true },
+  favorito: { type: Boolean, default: false },
 })
 const emit = defineEmits(['favoritar'])
 const router = useRouter()
 
 const estoqueBaixo = computed(() => props.produto.estoque > 0 && props.produto.estoque <= 3)
 const esgotado = computed(() => props.produto.estoque === 0)
+
+const desconto = computed(() => {
+  if (props.produto.promocional && props.produto.preco_promocional && props.produto.preco_promocional < props.produto.preco) {
+    return Math.round((1 - props.produto.preco_promocional / props.produto.preco) * 100)
+  }
+  return 0
+})
+
+const precoExibir = computed(() => {
+  if (props.produto.promocional && props.produto.preco_promocional) {
+    return props.produto.preco_promocional
+  }
+  return props.produto.preco
+})
 
 function irParaProduto() {
   api.visualizarProduto(props.produto.id).catch(() => {})
@@ -19,14 +34,20 @@ function irParaProduto() {
 </script>
 
 <template>
-  <div class="card-premium group cursor-pointer" @click="irParaProduto">
-    <div class="relative overflow-hidden" :style="{ background: 'var(--bg)' }">
+  <div
+    :class="[
+      'group cursor-pointer overflow-hidden',
+      produto.promocional ? 'card-promocional' : 'card-premium',
+    ]"
+    @click="irParaProduto"
+  >
+    <div class="relative" :style="{ background: 'var(--bg)' }">
       <div class="aspect-square overflow-hidden rounded-xl">
         <img
           v-if="produto.imagem_url"
           :src="produto.imagem_url"
           :alt="produto.nome"
-          class="w-full h-full object-contain p-4 transition-all duration-500 group-hover:scale-110"
+          class="w-full h-full object-contain p-2 transition-all duration-500 group-hover:scale-110"
           :style="{ background: 'var(--bg-card-solid)' }"
           loading="lazy"
         />
@@ -38,12 +59,21 @@ function irParaProduto() {
         </div>
       </div>
 
+      <div v-if="desconto > 0" class="absolute top-2 left-2 z-10">
+        <span class="px-2 py-1 rounded-lg text-[11px] font-extrabold tracking-wide"
+          :style="{ background: 'var(--ctp-red)', color: 'white' }">
+          -{{ desconto }}%
+        </span>
+      </div>
+
       <button
         @click.stop="emit('favoritar')"
-        class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 glass"
-        :style="{ color: 'var(--accent)' }"
+        class="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 glass"
+        :style="{ color: favorito ? 'var(--ctp-red)' : 'var(--accent)' }"
       >
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="w-4 h-4">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+          :fill="favorito ? 'currentColor' : 'none'"
+          stroke="currentColor" stroke-width="2" class="w-4 h-4">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
         </svg>
       </button>
@@ -57,15 +87,23 @@ function irParaProduto() {
     <div class="p-3 sm:p-4" :style="{ background: 'var(--bg-card-solid)' }">
       <p class="font-display font-semibold text-sm sm:text-base truncate" :style="{ color: 'var(--text-bright)' }">
         {{ produto.nome }}
+        <span v-if="produto.promocional" class="inline-block ml-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded"
+          :style="{ background: 'var(--ctp-red)', color: 'white' }">Promo</span>
       </p>
       <p v-if="produto.descricao" class="text-xs mt-0.5 line-clamp-2 leading-relaxed" :style="{ color: 'var(--text-dim)' }">
         {{ produto.descricao }}
       </p>
 
       <div class="flex items-center justify-between mt-2.5 pt-2.5" :style="{ borderTop: '1px solid var(--border)' }">
-        <span class="font-display text-base sm:text-lg font-semibold gradient-text">
-          R$ {{ produto.preco.toFixed(2) }}
-        </span>
+        <div class="flex items-center gap-2">
+          <span v-if="desconto > 0" class="text-[11px] line-through" :style="{ color: 'var(--text-dim)' }">
+            R$ {{ produto.preco.toFixed(2) }}
+          </span>
+          <span :class="desconto > 0 ? 'font-display text-base sm:text-lg font-bold' : 'font-display text-base sm:text-lg font-semibold gradient-text'"
+            :style="desconto > 0 ? { color: 'var(--ctp-red)' } : {}">
+            R$ {{ precoExibir.toFixed(2) }}
+          </span>
+        </div>
         <span v-if="estoqueBaixo" class="text-[10px] font-medium" :style="{ color: 'var(--ctp-yellow)' }">
           Apenas {{ produto.estoque }}
         </span>

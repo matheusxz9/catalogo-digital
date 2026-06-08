@@ -165,11 +165,22 @@ onMounted(async () => {
 
             <div class="border-t pt-6" :style="{ borderColor: 'var(--border)' }">
               <p class="text-xs font-medium mb-1" :style="{ color: 'var(--text-dim)' }">Preço</p>
-              <span class="font-display text-3xl sm:text-4xl font-semibold gradient-text">
-                R$ {{ produto.preco.toFixed(2) }}
-              </span>
-
-
+              <div class="flex items-baseline gap-3">
+                <span v-if="produto.promocional && produto.preco_promocional"
+                  class="font-display text-3xl sm:text-4xl font-bold"
+                  :style="{ color: 'var(--ctp-red)' }">
+                  R$ {{ produto.preco_promocional.toFixed(2) }}
+                </span>
+                <span :class="produto.promocional && produto.preco_promocional ? 'font-display text-lg line-through' : 'font-display text-3xl sm:text-4xl font-semibold gradient-text'"
+                  :style="produto.promocional && produto.preco_promocional ? { color: 'var(--text-dim)' } : {}">
+                  R$ {{ produto.preco.toFixed(2) }}
+                </span>
+                <span v-if="produto.promocional && produto.preco_promocional"
+                  class="px-2 py-0.5 rounded-lg text-xs font-extrabold"
+                  :style="{ background: 'var(--ctp-red)', color: 'white' }">
+                  -{{ Math.round((1 - produto.preco_promocional / produto.preco) * 100) }}%
+                </span>
+              </div>
             </div>
 
             <div class="mt-6 space-y-3">

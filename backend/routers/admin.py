@@ -84,3 +84,15 @@ def toggle_ativo(id: int, db: Session = Depends(get_db), _: models.Admin = Depen
     db.commit()
     db.refresh(produto)
     return produto
+
+@router.patch("/produtos/{id}/toggle-promocional", response_model=schemas.ProdutoOut)
+def toggle_promocional(id: int, db: Session = Depends(get_db), _: models.Admin = Depends(get_admin_atual)):
+    produto = db.query(models.Produto).filter(models.Produto.id == id).first()
+    if not produto:
+        raise HTTPException(status_code=404, detail="Produto não encontrado")
+    produto.promocional = not produto.promocional
+    if not produto.promocional:
+        produto.preco_promocional = None
+    db.commit()
+    db.refresh(produto)
+    return produto

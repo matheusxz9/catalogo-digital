@@ -28,6 +28,7 @@ const mostrandoForm = ref(false)
 const form = ref({
   nome: '', descricao: '', preco: '', estoque: '', categoria: '',
   purchasePrice: '', profitMargin: '',
+  promocional: false, preco_promocional: '',
 })
 const arquivos = ref(null)
 const enviando = ref(false)
@@ -117,10 +118,12 @@ function abrirForm(produto = null) {
       categoria: produto.categoria,
       purchasePrice: produto.purchasePrice ?? '',
       profitMargin: produto.profitMargin ?? '',
+      promocional: produto.promocional || false,
+      preco_promocional: produto.preco_promocional ?? '',
     }
   } else {
     editandoId.value = null
-    form.value = { nome: '', descricao: '', preco: '', estoque: '', categoria: '', purchasePrice: '', profitMargin: '' }
+    form.value = { nome: '', descricao: '', preco: '', estoque: '', categoria: '', purchasePrice: '', profitMargin: '', promocional: false, preco_promocional: '' }
     arquivos.value = null
   }
   mostrandoForm.value = true
@@ -137,6 +140,8 @@ async function salvar() {
       categoria: form.value.categoria,
       purchasePrice: form.value.purchasePrice ? Number(form.value.purchasePrice) : null,
       profitMargin: form.value.profitMargin ? Number(form.value.profitMargin) : null,
+      promocional: form.value.promocional,
+      preco_promocional: form.value.preco_promocional ? Number(form.value.preco_promocional) : null,
     }
     if (editandoId.value) {
       await api.atualizarProduto(editandoId.value, dados)
@@ -200,6 +205,16 @@ async function toggleAtivo(id) {
     await carregar()
   } catch (e) {
     notificar(e.message || 'Erro ao alterar status', 'erro')
+  }
+}
+
+async function togglePromocional(id) {
+  try {
+    const p = await api.togglePromocional(id)
+    notificar(p.promocional ? 'Produto marcado como promocional' : 'Promoção removida')
+    await carregar()
+  } catch (e) {
+    notificar(e.message || 'Erro ao alterar promoção', 'erro')
   }
 }
 
@@ -517,6 +532,15 @@ onMounted(async () => {
                     <label class="block text-xs font-medium mb-1.5" :style="{ color: 'var(--text-dim)' }">Margem (%)</label>
                     <input v-model="form.profitMargin" type="number" step="0.1" min="0" class="input-field" />
                   </div>
+                  <div class="flex items-center gap-3">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                      <input v-model="form.promocional" type="checkbox" class="w-4 h-4 rounded"
+                        :style="{ accentColor: 'var(--ctp-red)' }" />
+                      <span class="text-xs font-medium" :style="{ color: 'var(--text-dim)' }">Promocional</span>
+                    </label>
+                    <input v-if="form.promocional" v-model="form.preco_promocional" type="number" step="0.01" min="0"
+                      placeholder="Preço promocional" class="input-field text-sm flex-1" />
+                  </div>
                   <div>
                     <label class="block text-xs font-medium mb-1.5" :style="{ color: 'var(--text-dim)' }">
                       {{ editandoId ? 'Adicionar Imagens' : 'Imagens' }}
@@ -591,7 +615,21 @@ onMounted(async () => {
                       </span>
                     </div>
                   </div>
+                  <div v-if="p.promocional" class="flex-shrink-0 self-center">
+                    <span class="px-2 py-0.5 rounded text-[10px] font-extrabold"
+                      :style="{ background: 'var(--ctp-red)', color: 'white' }">
+                      -{{ Math.round((1 - p.preco_promocional / p.preco) * 100) }}%
+                    </span>
+                  </div>
                   <div class="flex gap-1 flex-shrink-0">
+                    <button @click="togglePromocional(p.id)"
+                      class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-105"
+                      :style="{ background: p.promocional ? 'rgba(var(--ctp-red), 0.15)' : 'var(--surface0)', color: p.promocional ? 'var(--ctp-red)' : 'var(--text-dim)' }"
+                      :title="p.promocional ? 'Remover promoção' : 'Tornar promocional'">
+                      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456zM16.894 20.567L16.5 21.75l-.394-1.183a2.25 2.25 0 00-1.423-1.423L13.5 18.75l1.183-.394a2.25 2.25 0 001.423-1.423l.394-1.183.394 1.183a2.25 2.25 0 001.423 1.423l1.183.394-1.183.394a2.25 2.25 0 00-1.423 1.423z" />
+                      </svg>
+                    </button>
                     <button @click="toggleAtivo(p.id)"
                       class="w-8 h-8 rounded-lg flex items-center justify-center transition-all hover:scale-105"
                       :style="{ background: 'var(--surface0)', color: p.ativo ? 'rgb(var(--ctp-green))' : 'var(--text-dim)' }"

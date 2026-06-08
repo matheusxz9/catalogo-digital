@@ -19,6 +19,8 @@ class Produto(Base):
     visualizacoes = Column(Integer, default=0)
     purchasePrice = Column(Float, nullable=True)
     profitMargin = Column(Float, nullable=True)
+    promocional = Column(Boolean, default=False)
+    preco_promocional = Column(Float, nullable=True)
  
     imagens = relationship(
         "ProdutoImagem",

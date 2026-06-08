@@ -84,4 +84,7 @@ export const api = {
   async toggleAtivo(id) {
     return request(`/admin/produtos/${id}/toggle-ativo`, { method: 'PATCH' })
   },
+  async togglePromocional(id) {
+    return request(`/admin/produtos/${id}/toggle-promocional`, { method: 'PATCH' })
+  },
 }

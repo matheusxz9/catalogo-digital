@@ -148,6 +148,34 @@ html.dark {
   box-shadow: 0 12px 40px var(--shadow-lg), 0 4px 12px var(--shadow);
 }
 
+.card-promocional {
+  border-radius: 1rem;
+  border: 2px solid rgb(var(--ctp-red));
+  background: var(--bg-card-solid);
+  transition: all 0.25s ease;
+  position: relative;
+}
+
+.card-promocional::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: calc(1rem + 2px);
+  background: linear-gradient(135deg, rgba(var(--ctp-red), 0.3), transparent 40%, rgba(var(--ctp-red), 0.1));
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card-promocional:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 40px rgba(var(--ctp-red), 0.2), 0 4px 12px var(--shadow);
+}
+
+.card-promocional:hover::before {
+  opacity: 1;
+}
+
 .gradient-text {
   background: var(--accent-gradient);
   -webkit-background-clip: text;

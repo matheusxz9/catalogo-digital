@@ -25,6 +25,10 @@ def run_migration():
         conn.execute(text('ALTER TABLE produtos ADD COLUMN IF NOT EXISTS visualizacoes INTEGER DEFAULT 0;'))
         
         # Add indexes
+        print("Adding 'promocional' and 'preco_promocional' columns if they don't exist...")
+        conn.execute(text("ALTER TABLE produtos ADD COLUMN IF NOT EXISTS promocional BOOLEAN DEFAULT FALSE;"))
+        conn.execute(text('ALTER TABLE produtos ADD COLUMN IF NOT EXISTS preco_promocional DOUBLE PRECISION;'))
+
         print("Creating indexes on 'ativo' and 'criado_em' if they don't exist...")
         conn.execute(text('CREATE INDEX IF NOT EXISTS ix_produtos_ativo ON produtos (ativo);'))
         conn.execute(text('CREATE INDEX IF NOT EXISTS ix_produtos_criado_em ON produtos (criado_em);'))

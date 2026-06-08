@@ -16,7 +16,9 @@ class ProdutoBase(BaseModel):
     categoria: str = Field(..., min_length=1, max_length=100)
     purchasePrice: Optional[float] = Field(None, ge=0)
     profitMargin: Optional[float] = Field(None, ge=0)
- 
+    promocional: bool = False
+    preco_promocional: Optional[float] = Field(None, ge=0)
+
 class ProdutoUpdate(ProdutoBase):
     nome: Optional[str] = Field(None, min_length=1, max_length=200)
     descricao: Optional[str] = Field(None, max_length=1000)
@@ -24,6 +26,8 @@ class ProdutoUpdate(ProdutoBase):
     estoque: Optional[int] = Field(None, ge=0)
     categoria: Optional[str] = Field(None, min_length=1, max_length=100)
     ativo: Optional[bool] = None
+    promocional: Optional[bool] = None
+    preco_promocional: Optional[float] = Field(None, ge=0)
  
 class ProdutoPublicOut(BaseModel):
     id: int

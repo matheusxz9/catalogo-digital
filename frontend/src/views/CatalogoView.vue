@@ -146,6 +146,7 @@ onMounted(() => {
       <div v-else-if="filtrados.length > 0"
         class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-5">
         <ProdutoCard v-for="(produto, idx) in filtrados" :key="produto.id" :produto="produto"
+          :favorito="favoritos.has(produto.id)"
           :style="{ animation: `fadeInUp 0.4s ease ${idx * 0.05}s both` }"
           @favoritar="favoritarProduto(produto)" />
       </div>

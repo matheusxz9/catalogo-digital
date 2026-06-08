@@ -46,6 +46,8 @@ async def criar_produto(
     categoria: str = Form(...),
     purchasePrice: Optional[float] = Form(None),
     profitMargin: Optional[float] = Form(None),
+    promocional: bool = Form(False),
+    preco_promocional: Optional[float] = Form(None),
     imagens: Optional[List[UploadFile]] = File(None),
     db: Session = Depends(get_db),
     _: models.Admin = Depends(get_admin_atual),
@@ -54,6 +56,7 @@ async def criar_produto(
         nome=nome, descricao=descricao, preco=preco,
         estoque=estoque, categoria=categoria,
         purchasePrice=purchasePrice, profitMargin=profitMargin,
+        promocional=promocional, preco_promocional=preco_promocional,
     )
     db.add(produto)
     db.flush()
