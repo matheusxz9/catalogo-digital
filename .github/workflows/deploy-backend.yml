@@ -42,8 +42,9 @@ jobs:
 
       - name: Sync frontend dist
         run: |
+          ssh root@${{ secrets.HETZNER_HOST }} "mkdir -p /root/frontend/dist"
           rsync -avz --delete \
-            frontend/dist/ root@${{ secrets.HETZNER_HOST }}:/root/CatalogoFrontend/dist/
+            frontend/dist/ root@${{ secrets.HETZNER_HOST }}:/root/frontend/dist/
 
       - name: Restart container
         run: |
