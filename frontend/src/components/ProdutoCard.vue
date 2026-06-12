@@ -11,11 +11,19 @@ const emit = defineEmits(['favoritar'])
 const router = useRouter()
 
 const estoqueBaixo = computed(() => props.produto.estoque > 0 && props.produto.estoque <= 3)
+const estoqueCritico = computed(() => props.produto.estoque > 0 && props.produto.estoque <= 2)
 const esgotado = computed(() => props.produto.estoque === 0)
 
 const desconto = computed(() => {
   if (props.produto.promocional && props.produto.preco_promocional && props.produto.preco_promocional < props.produto.preco) {
     return Math.round((1 - props.produto.preco_promocional / props.produto.preco) * 100)
+  }
+  return 0
+})
+
+const economia = computed(() => {
+  if (desconto.value > 0) {
+    return props.produto.preco - props.produto.preco_promocional
   }
   return 0
 })
@@ -42,6 +50,10 @@ function irParaProduto() {
     @click="irParaProduto"
   >
     <div class="relative" :style="{ background: 'var(--bg)' }">
+      <div v-if="produto.promocional" class="promo-ribbon">
+        <span>Promo</span>
+      </div>
+
       <div class="aspect-square overflow-hidden rounded-xl">
         <img
           v-if="produto.imagem_url"
@@ -59,17 +71,20 @@ function irParaProduto() {
         </div>
       </div>
 
-      <div v-if="desconto > 0" class="absolute top-2 left-2 z-10">
-        <span class="px-2 py-1 rounded-lg text-[11px] font-extrabold tracking-wide"
-          :style="{ background: 'var(--ctp-red)', color: 'white' }">
+      <div v-if="desconto > 0" class="absolute top-3 left-3 z-10">
+        <span class="promo-badge promo-badge-lightning">
+          <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/>
+          </svg>
           -{{ desconto }}%
         </span>
       </div>
 
       <button
         @click.stop="emit('favoritar')"
-        class="absolute top-2 right-2 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 glass"
+        class="absolute top-3 right-3 w-8 h-8 rounded-full flex items-center justify-center transition-all duration-200 opacity-0 group-hover:opacity-100 hover:scale-110 glass"
         :style="{ color: favorito ? 'var(--ctp-red)' : 'var(--accent)' }"
+        :class="produto.promocional ? '!opacity-100' : ''"
       >
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
           :fill="favorito ? 'currentColor' : 'none'"
@@ -87,26 +102,51 @@ function irParaProduto() {
     <div class="p-3 sm:p-4" :style="{ background: 'var(--bg-card-solid)' }">
       <p class="font-display font-semibold text-sm sm:text-base truncate" :style="{ color: 'var(--text-bright)' }">
         {{ produto.nome }}
-        <span v-if="produto.promocional" class="inline-block ml-1 text-[9px] font-bold uppercase px-1.5 py-0.5 rounded"
-          :style="{ background: 'var(--ctp-red)', color: 'white' }">Promo</span>
       </p>
       <p v-if="produto.descricao" class="text-xs mt-0.5 line-clamp-2 leading-relaxed" :style="{ color: 'var(--text-dim)' }">
         {{ produto.descricao }}
       </p>
 
-      <div class="flex items-center justify-between mt-2.5 pt-2.5" :style="{ borderTop: '1px solid var(--border)' }">
-        <div class="flex items-center gap-2">
-          <span v-if="desconto > 0" class="text-[11px] line-through" :style="{ color: 'var(--text-dim)' }">
-            R$ {{ produto.preco.toFixed(2) }}
-          </span>
-          <span :class="desconto > 0 ? 'font-display text-base sm:text-lg font-bold' : 'font-display text-base sm:text-lg font-semibold gradient-text'"
-            :style="desconto > 0 ? { color: 'var(--ctp-red)' } : {}">
-            R$ {{ precoExibir.toFixed(2) }}
+      <div class="mt-2.5 pt-2.5" :style="{ borderTop: '1px solid var(--border)' }">
+        <div class="flex items-baseline justify-between flex-wrap gap-x-3">
+          <div class="flex items-baseline gap-1.5 flex-wrap">
+            <template v-if="desconto > 0">
+              <span class="promo-price-label">De</span>
+              <span class="text-[11px] line-through" :style="{ color: 'var(--text-dim)' }">
+                R$ {{ produto.preco.toFixed(2) }}
+              </span>
+              <span class="promo-price-label ml-1">Por</span>
+              <span class="font-display text-base sm:text-lg font-bold" :style="{ color: 'var(--ctp-red)' }">
+                R$ {{ precoExibir.toFixed(2) }}
+              </span>
+            </template>
+            <template v-else>
+              <span class="font-display text-base sm:text-lg font-semibold gradient-text">
+                R$ {{ precoExibir.toFixed(2) }}
+              </span>
+            </template>
+          </div>
+          <span v-if="estoqueBaixo" class="text-[10px] font-medium whitespace-nowrap" :style="{ color: 'var(--ctp-yellow)' }">
+            Só {{ produto.estoque }}
           </span>
         </div>
-        <span v-if="estoqueBaixo" class="text-[10px] font-medium" :style="{ color: 'var(--ctp-yellow)' }">
-          Apenas {{ produto.estoque }}
-        </span>
+
+        <div v-if="desconto > 0" class="flex items-center gap-2 mt-2">
+          <span class="promo-savings">
+            Economize R$ {{ economia.toFixed(2) }}
+          </span>
+          <span v-if="estoqueBaixo" class="text-[10px] font-medium" :style="{ color: 'var(--ctp-yellow)' }">
+            Só {{ produto.estoque }} restantes
+          </span>
+        </div>
+
+        <div v-if="desconto > 0 && estoqueBaixo" class="promo-stock-bar">
+          <div
+            class="promo-stock-bar-fill"
+            :class="estoqueCritico ? 'critical' : 'low'"
+            :style="{ width: Math.min((produto.estoque / 5) * 100, 100) + '%' }"
+          ></div>
+        </div>
       </div>
     </div>
   </div>

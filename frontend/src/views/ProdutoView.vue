@@ -24,10 +24,27 @@ const imagens = computed(() => {
 
 const esgotado = computed(() => !produto.value || produto.value.estoque === 0)
 
+const desconto = computed(() => {
+  if (produto.value?.promocional && produto.value?.preco_promocional && produto.value?.preco_promocional < produto.value?.preco) {
+    return Math.round((1 - produto.value.preco_promocional / produto.value.preco) * 100)
+  }
+  return 0
+})
+
+const economia = computed(() => {
+  if (desconto.value > 0) {
+    return produto.value.preco - produto.value.preco_promocional
+  }
+  return 0
+})
+
 const WHATSAPP_LINK = computed(() => {
   if (!produto.value) return '#'
+  const valor = produto.value.promocional && produto.value.preco_promocional
+    ? produto.value.preco_promocional
+    : produto.value.preco
   const numero = '5584996997688'
-  const mensagem = `Olá! Tenho interesse no produto:\n\n*${produto.value.nome}*\nValor: R$ ${produto.value.preco.toFixed(2)}\n\nPoderia me dar mais informações?`
+  const mensagem = `Olá! Tenho interesse no produto:\n\n*${produto.value.nome}*\nValor: R$ ${valor.toFixed(2)}\n\nPoderia me dar mais informações?`
   return `https://wa.me/${numero}?text=${encodeURIComponent(mensagem)}`
 })
 
@@ -164,21 +181,44 @@ onMounted(async () => {
             </div>
 
             <div class="border-t pt-6" :style="{ borderColor: 'var(--border)' }">
-              <p class="text-xs font-medium mb-1" :style="{ color: 'var(--text-dim)' }">Preço</p>
-              <div class="flex items-baseline gap-3">
-                <span v-if="produto.promocional && produto.preco_promocional"
-                  class="font-display text-3xl sm:text-4xl font-bold"
-                  :style="{ color: 'var(--ctp-red)' }">
-                  R$ {{ produto.preco_promocional.toFixed(2) }}
-                </span>
-                <span :class="produto.promocional && produto.preco_promocional ? 'font-display text-lg line-through' : 'font-display text-3xl sm:text-4xl font-semibold gradient-text'"
-                  :style="produto.promocional && produto.preco_promocional ? { color: 'var(--text-dim)' } : {}">
-                  R$ {{ produto.preco.toFixed(2) }}
-                </span>
-                <span v-if="produto.promocional && produto.preco_promocional"
-                  class="px-2 py-0.5 rounded-lg text-xs font-extrabold"
+              <div v-if="desconto > 0" class="flex items-center gap-2 mb-3">
+                <span class="px-2.5 py-1 rounded-lg text-xs font-extrabold inline-flex items-center gap-1"
                   :style="{ background: 'var(--ctp-red)', color: 'white' }">
-                  -{{ Math.round((1 - produto.preco_promocional / produto.preco) * 100) }}%
+                  <svg viewBox="0 0 24 24" width="12" height="12" fill="currentColor">
+                    <path d="M13 2L3 14h7l-1 8 10-12h-7l1-8z"/>
+                  </svg>
+                  -{{ desconto }}%
+                </span>
+                <span class="text-xs font-medium px-2.5 py-1 rounded-lg"
+                  :style="{ background: 'rgba(var(--ctp-green), 0.1)', color: 'rgb(var(--ctp-green))' }">
+                  Oferta
+                </span>
+              </div>
+              <p class="text-xs font-medium mb-1.5" :style="{ color: 'var(--text-dim)' }">Preço</p>
+              <div class="flex items-baseline gap-2 flex-wrap">
+                <template v-if="desconto > 0">
+                  <span class="text-sm font-medium" :style="{ color: 'var(--text-dim)' }">De</span>
+                  <span class="font-display text-lg line-through" :style="{ color: 'var(--text-dim)' }">
+                    R$ {{ produto.preco.toFixed(2) }}
+                  </span>
+                  <span class="text-sm font-medium ml-1" :style="{ color: 'var(--text-dim)' }">por</span>
+                  <span class="font-display text-3xl sm:text-4xl font-bold"
+                    :style="{ color: 'var(--ctp-red)' }">
+                    R$ {{ produto.preco_promocional.toFixed(2) }}
+                  </span>
+                </template>
+                <template v-else>
+                  <span class="font-display text-3xl sm:text-4xl font-semibold gradient-text">
+                    R$ {{ produto.preco.toFixed(2) }}
+                  </span>
+                </template>
+              </div>
+              <div v-if="desconto > 0" class="flex items-center gap-3 mt-2">
+                <span class="promo-savings">
+                  Economize R$ {{ economia.toFixed(2) }}
+                </span>
+                <span class="text-[11px]" :style="{ color: 'var(--text-dim)' }">
+                  (~{{ desconto }}% de desconto)
                 </span>
               </div>
             </div>

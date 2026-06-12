@@ -1,8 +1,11 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 from dotenv import load_dotenv
 from sqlalchemy.orm import Session
 import os
+from pathlib import Path
 
 
 load_dotenv()
@@ -37,9 +40,24 @@ app.add_middleware(
 app.include_router(produtos.router)
 app.include_router(admin.router)
 
-@app.api_route("/", methods=["GET", "HEAD"])
-def root():
-    return {"status": "ok", "mensagem": "API Studio Bella Mizi funcionando!"}
+FRONTEND_DIST = Path(__file__).resolve().parent.parent / "frontend" / "dist"
+
+if FRONTEND_DIST.exists():
+    app.mount("/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="assets")
+
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
+    def serve_frontend(full_path: str):
+        file_path = FRONTEND_DIST / full_path
+        if file_path.is_file():
+            return FileResponse(str(file_path))
+        index_path = FRONTEND_DIST / "index.html"
+        if index_path.exists():
+            return FileResponse(str(index_path))
+        return {"status": "ok", "mensagem": "API Studio Bella Mizi funcionando!"}
+else:
+    @app.api_route("/{full_path:path}", methods=["GET", "HEAD"])
+    def root(full_path: str = ""):
+        return {"status": "ok", "mensagem": "API Studio Bella Mizi funcionando!"}
 
 def criar_admin_inicial():
     db: Session = SessionLocal()
