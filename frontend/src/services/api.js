@@ -27,9 +27,12 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    const mensagem = Array.isArray(data.detail)
-      ? data.detail.map(e => e.msg || e).join('; ')
-      : (data.detail || 'Erro na requisição')
+    let mensagem = 'Erro na requisição'
+    if (data.detail) {
+      mensagem = Array.isArray(data.detail)
+        ? data.detail.map(e => String(e.msg || e)).join('; ')
+        : String(data.detail)
+    }
     throw new Error(mensagem)
   }
   return data
