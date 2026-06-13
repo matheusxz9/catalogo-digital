@@ -27,7 +27,10 @@ async function request(path, options = {}) {
   }
 
   if (!res.ok) {
-    throw new Error(data.detail || 'Erro na requisição')
+    const mensagem = Array.isArray(data.detail)
+      ? data.detail.map(e => e.msg || e).join('; ')
+      : (data.detail || 'Erro na requisição')
+    throw new Error(mensagem)
   }
   return data
 }

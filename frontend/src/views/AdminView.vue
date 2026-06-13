@@ -153,7 +153,9 @@ async function salvar() {
       notificar('Produto atualizado')
     } else {
       const fd = new FormData()
-      Object.entries(dados).forEach(([k, v]) => fd.append(k, v))
+      Object.entries(dados).forEach(([k, v]) => {
+        if (v !== null && v !== undefined) fd.append(k, v)
+      })
       if (arquivos.value?.length) {
         for (const f of arquivos.value) fd.append('imagens', f)
       }
